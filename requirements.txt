@@ -1,0 +1,33 @@
+# Core runtime
+numpy
+scipy
+opencv-python
+Pillow
+PyYAML
+tqdm
+matplotlib
+pandas
+scikit-image
+scikit-learn
+open3d
+plyfile
+
+# Deep learning
+torch
+torchvision
+lpips
+pytorch-msssim
+thop
+visdom
+
+# Dataset SDKs
+nuscenes-devkit
+pyquaternion
+tensorflow
+waymo-open-dataset-tf-2-12-0
+
+# Legacy intrinsic / DenseCRF route
+Cython
+
+# Optional ROS tools require a ROS 1 environment that provides rospy, rosbag,
+# sensor_msgs, and std_msgs; these are not installed through pip.

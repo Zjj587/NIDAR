@@ -1,0 +1,80 @@
+# Public Waymo-style NIDAR config template.
+#
+# The config loader expands ${PROJECT_ROOT}, ${DATA_ROOT}, ${OUTPUT_ROOT}, and
+# ${WEIGHTS_ROOT}. Set those variables before running the pipeline, or replace
+# the placeholders with absolute paths on your machine.
+
+dataset:
+  type: waymo
+  image_dir: ${DATA_ROOT}/waymo/example_scene/raw/images
+  pointcloud_dir: ${DATA_ROOT}/waymo/example_scene/raw/pointclouds
+  calib_dir: ${DATA_ROOT}/waymo/example_scene/raw/images
+  work_dir: ${OUTPUT_ROOT}/waymo_example
+  downsample_scale: 0.25
+  start_frame: 0
+  num_frames: 10
+  step: 1
+  cameras: null
+
+stage1:
+  bit_depth: 8
+  exp_ratio: 0.5
+  target_h: 0
+  target_w: 0
+  use_gpu: true
+  skip_existing: true
+  checkpoint: ${WEIGHTS_ROOT}/stn/47.pth
+
+stage2:
+  decompose_script: ${PROJECT_ROOT}/third_party/Intrinsic-Image-Decomposition/decompose.py
+  linear: false
+  parameters: null
+  skip_existing: true
+
+stage2_deep:
+  checkpoint_path: ${WEIGHTS_ROOT}/irnet/epoch_010.pth
+  model_config_path: ${PROJECT_ROOT}/inference/configs/deep_intrinsic_public_model.yaml
+  image_shape: [640, 960]
+  device: cuda
+  model_kwargs: {}
+  save_shading: false
+  save_reconstruction: false
+  # Paper-aligned route: export the reflectance-like R branch for projection
+  # and apply Stage 3.5 quantile remapping.
+  use_i_hat_as_r: false
+
+stage3:
+  normalize_intensity: true
+  merge_strategy: mean
+  save_npy: true
+  save_ply: true
+  save_rgb_ply: true
+  save_gt_pointcloud: true
+  skip_existing: false
+
+stage3_5:
+  skip_existing: false
+  save_ply: false
+  quantile_model_dir: ${WEIGHTS_ROOT}/quantile
+  quantile_model_path: ${WEIGHTS_ROOT}/quantile/wintensity_mapping_quantile_model.pkl
+
+evaluation:
+  waymo_calib_json: ${PROJECT_ROOT}/inference/configs/waymo_lidar_calib.json
+  waymo_h_res: 0.35
+  waymo_v_res: 0.4
+  waymo_v_fov: [-3, 37]
+  nuscenes_h_res: 0.35
+  nuscenes_v_res: 0.4
+  nuscenes_v_fov: [-30, 10]
+  cmap_name: cividis
+  intensity_vmax: 1.5
+  remove_invalid_columns: null
+  compute_lpips: true
+  lpips_net: alex
+  device: cpu
+  skip_existing: false
+
+logging:
+  level: INFO
+  save_to_file: true
+  log_file: pipeline.log

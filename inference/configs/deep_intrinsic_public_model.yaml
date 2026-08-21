@@ -1,0 +1,14 @@
+# Public IRNet model-architecture config for inference.
+# Dataset and training paths are intentionally omitted.
+
+model:
+  base_channels: 32
+  intensity_hidden_channels: 32
+  intensity_depth: 3
+  intensity_kernel_size: 3
+  intensity_use_bn: true
+  use_shading_for_intensity: false
+  intrinsic_net_type: unet
+  intensity_head_type: deeplab
+  deeplab_base_channels: 32
+  deeplab_output_stride: 16
