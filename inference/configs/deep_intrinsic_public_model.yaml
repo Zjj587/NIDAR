@@ -3,10 +3,10 @@
 
 model:
   base_channels: 32
-  intensity_hidden_channels: 32
+  intensity_hidden_channels: 16
   intensity_depth: 3
   intensity_kernel_size: 3
-  intensity_use_bn: true
+  intensity_use_bn: false
   use_shading_for_intensity: false
   intrinsic_net_type: unet
   intensity_head_type: conv
