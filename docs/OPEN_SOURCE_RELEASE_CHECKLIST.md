@@ -13,10 +13,14 @@ development machine.
 - [x] `inference/src/utils/config.py` expands `${VAR}` and `~` in YAML strings.
 - [x] Waymo and nuScenes CLIs provide `--keep-remap-with-deep` for the
   paper-aligned `R+remap` route while preserving the older default behavior.
+- [x] `docs/DEMO.md` documents the minimal Waymo-style demo command, output
+  tree, and qualitative comparison images.
+- [x] `docs/MODEL_ZOO.md` documents the external checkpoint and sample-data
+  artifact layout.
 
-## Items Requiring Owner Review Before GitHub Upload
+## Items Requiring Owner Review Before Public Artifact Release
 
-- [ ] Final repository license.
+- [x] Source-code license file is present in the GitHub repository.
 - [ ] Third-party notices for STN/cs-stereo, IIW-CRF/DenseCRF,
   Waymo Open Dataset, nuScenes, ROS, Isaac Sim, UE5, and any external baseline
   code.
@@ -36,10 +40,10 @@ development machine.
 
 ## Local Evidence Kept Under V0
 
-`V0/` contains P0 reports, qualitative figures, and diagnostic scripts from the
-development machine. These files may contain local evidence paths; keep them out
-of the public quick start unless they are clearly marked as local evidence or
-moved to supplementary artifacts.
+P0 reports, qualitative figures, and diagnostic scripts are kept as research
+artifacts outside this first source package. They may contain local evidence
+paths; keep them out of the public quick start unless they are cleaned and moved
+to supplementary artifacts.
 
 ## Minimal Verification Before Public Upload
 
@@ -48,9 +52,10 @@ Run from the repository root:
 ```bash
 python3 -m py_compile \
   inference/run_waymo_pipeline.py \
-  inference/run_nuscenes_pipeline.py \
   inference/src/utils/config.py \
-  training/train_deep_intrinsic_v3.py
+  inference/src/models/deep_intrinsic_net.py \
+  inference/src/models/network_variants.py \
+  inference/src/models/stn_wrapper.py
 
 python3 inference/run_waymo_pipeline.py --help
 

@@ -6,13 +6,13 @@
 
 dataset:
   type: waymo
-  image_dir: ${DATA_ROOT}/waymo/example_scene/raw/images
-  pointcloud_dir: ${DATA_ROOT}/waymo/example_scene/raw/pointclouds
-  calib_dir: ${DATA_ROOT}/waymo/example_scene/raw/images
-  work_dir: ${OUTPUT_ROOT}/waymo_example
+  image_dir: ${DATA_ROOT}/waymo/demo_scene/raw/images
+  pointcloud_dir: ${DATA_ROOT}/waymo/demo_scene/raw/pointclouds
+  calib_dir: ${DATA_ROOT}/waymo/demo_scene/raw/images
+  work_dir: ${OUTPUT_ROOT}/waymo_demo
   downsample_scale: 0.25
   start_frame: 0
-  num_frames: 10
+  num_frames: 2
   step: 1
   cameras: null
 
@@ -54,7 +54,7 @@ stage3:
 
 stage3_5:
   skip_existing: false
-  save_ply: false
+  save_ply: true
   quantile_model_dir: ${WEIGHTS_ROOT}/quantile
   quantile_model_path: ${WEIGHTS_ROOT}/quantile/wintensity_mapping_quantile_model.pkl
 
@@ -69,7 +69,7 @@ evaluation:
   cmap_name: cividis
   intensity_vmax: 1.5
   remove_invalid_columns: null
-  compute_lpips: true
+  compute_lpips: false
   lpips_net: alex
   device: cpu
   skip_existing: false

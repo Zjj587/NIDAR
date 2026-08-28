@@ -1,5 +1,5 @@
-"""模型封装模块"""
+"""Model wrappers exported by the public inference package."""
 from .stn_wrapper import STNWrapper
-from .intrinsic_decomposer import IntrinsicDecomposer
+from .deep_intrinsic_wrapper import DeepIntrinsicWrapper
 
-__all__ = ['STNWrapper', 'IntrinsicDecomposer']
+__all__ = ['STNWrapper', 'DeepIntrinsicWrapper']

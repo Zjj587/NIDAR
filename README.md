@@ -6,10 +6,10 @@ intrinsic decomposition, point-cloud projection, and distribution calibration so
 that simulated point clouds can carry an intensity channel without per-scene
 network fitting in the evaluated settings.
 
-This repository is currently organized as a release candidate for the IROS 2026
-accepted NIDAR project. Public upload still requires owner review of the
-license, pretrained-weight distribution, citation metadata, and third-party
-component notices.
+This repository is the public source-code home for the IROS 2026 accepted NIDAR
+project. The first public package focuses on Waymo-style inference and demo
+reproduction. Pretrained weights, sample data, and third-party notices are
+tracked separately from git.
 
 ## Pipeline
 
@@ -31,14 +31,13 @@ power.
 ## Repository Layout
 
 ```text
-inference/    Dataset and simulator inference pipelines.
-training/     IRNet and STN training utilities.
-ros/          ROS offline and online integration utilities.
-benchmark/    Runtime and metric benchmarking scripts.
-tools/        Data export, preparation, visualization, and evaluation helpers.
-docs/         Dataset-specific guides and release notes.
-V0/           P0 diagnostic reports, figures, and experiment harnesses.
+inference/    Waymo-style inference pipeline and core models.
+tools/        Release-package helper scripts.
+docs/         Demo, artifact, and release notes.
 ```
+
+Training code, ROS utilities, simulator-specific integrations, and diagnostic
+experiment harnesses are not part of this first source package.
 
 ## Environment
 
@@ -50,16 +49,15 @@ conda activate nidar
 pip install -r requirements.txt
 ```
 
-Optional routes need extra system components:
+Optional routes need extra components:
 
-- Waymo evaluation needs the Waymo Open Dataset package matching your TensorFlow
-  version.
-- ROS tools need a ROS 1 Python environment with `rospy`, `rosbag`,
-  `sensor_msgs`, and `std_msgs`.
+- Creating your own Waymo export needs the Waymo Open Dataset package matching
+  your TensorFlow version. The minimal demo uses already exported Waymo-style
+  files.
 - The legacy IIW-CRF route uses the Cython/C++ extension under
   `inference/krahenbuhl2013`.
 
-## Weights And Data
+## Model Zoo, Weights, And Data
 
 Do not hardcode private machine paths in public configs. Use environment
 variables and copy a template config:
@@ -84,82 +82,67 @@ Small quantile mapping files are present under `inference/quantile_model/`.
 Large STN/IRNet checkpoints should be distributed separately after owner and
 license review.
 
-## Quick Start: Waymo-Style Export
+Artifact links and the demo-data layout are tracked in:
 
-Prepare a Waymo-style export with image, point-cloud, and calibration files, then
-copy and edit the public template:
+- `docs/MODEL_ZOO.md`
+- `docs/DEMO.md`
+
+## Quick Start: Minimal Waymo-Style Demo
+
+Download or prepare the artifacts listed in `docs/MODEL_ZOO.md`, then copy and
+edit the public template:
 
 ```bash
 cd "$PROJECT_ROOT"
-cp inference/configs/waymo_public_template.yaml inference/configs/my_waymo.yaml
+cp inference/configs/waymo_public_template.yaml inference/configs/my_waymo_demo.yaml
 ```
 
 Run the paper-aligned `R+remap` route:
 
 ```bash
 python inference/run_waymo_pipeline.py \
-  inference/configs/my_waymo.yaml \
+  inference/configs/my_waymo_demo.yaml \
   --stages 1,2,3,3.5,4 \
   --use-deep \
   --keep-remap-with-deep
 ```
 
+The demo writes pseudo-NIR images, IRNet `R` images, pre-remap and remapped
+point clouds, per-frame range-image comparison PNGs, and
+`evaluation_summary.json` under `$OUTPUT_ROOT/waymo_demo`. See `docs/DEMO.md`
+for the exact output tree and what to inspect visually.
+
 For backward-compatible direct deep output without remapping:
 
 ```bash
 python inference/run_waymo_pipeline.py \
-  inference/configs/my_waymo.yaml \
+  inference/configs/my_waymo_demo.yaml \
   --stages 1,2,3,4 \
   --use-deep
 ```
 
 ## Other Pipelines
 
-nuScenes, Isaac Sim, and UE5 entry points are available under `inference/`:
-
-```bash
-python inference/run_nuscenes_pipeline.py /path/to/clean_nuscenes_config.yaml --use-deep
-python inference/run_isaacsim_pipeline.py /path/to/clean_isaacsim_config.yaml --use-deep
-python inference/run_ue5_pipeline.py /path/to/clean_ue5_config.yaml --use-deep
-```
-
-The development tree contains local example configs for these routes. Before
-public execution, copy them to cleaned configs and replace dataset, checkpoint,
-output, and calibration paths with portable paths.
+nuScenes, Isaac Sim, UE5, ROS, and training utilities exist in the development
+tree but are not included in this first public source package. They should be
+released only after separate packaging, dependency, and license review.
 
 ## P0 Diagnostic Artifacts
 
-`V0/` contains the controlled pseudo-NIR-versus-RGB diagnostic materials used
-for the arXiv revision:
-
-- `V0/P0_FULL_INTRINSIC_CONVERGENCE_REPORT.md`
-- `V0/P0_QUALITATIVE_INTENSITY_COMPARISON_REPORT.md`
-- `V0/p0_qualitative_intensity_comparison/`
-- `V0/p0_visual_comparison/`
-- `V0/scripts/p0_matched_irnet_input_ablation.py`
-- `V0/scripts/p0_branch_output_control.py`
-
-The P0 results support the main design conclusion: RGB and pseudo-NIR can reach
-similar sparse intensity validation loss, while pseudo-NIR is stronger through
-the reflectance-calibration `R+remap` route.
+The controlled pseudo-NIR-versus-RGB diagnostic materials used for the arXiv
+revision are kept as research artifacts, not as part of this first public source
+package. The P0 results support the main design conclusion: RGB and pseudo-NIR
+can reach similar sparse intensity validation loss, while pseudo-NIR is stronger
+through the reflectance-calibration `R+remap` route in the evaluated setup.
 
 ## Training
 
-IRNet training entry point:
-
-```bash
-python training/train_deep_intrinsic_v3.py \
-  --config /path/to/clean_training_config.yaml
-```
-
-The provided training configs contain local evidence paths from the development
-machine. Before public training, copy them to a new config and replace dataset,
-checkpoint, output, and mask paths with portable paths under `DATA_ROOT`,
-`OUTPUT_ROOT`, and `WEIGHTS_ROOT`.
+Training code is planned for a later release. This first package documents and
+tests the inference route.
 
 ## Release Notes
 
-Before public upload, review:
+Before publishing external artifacts, review:
 
 - `docs/OPEN_SOURCE_RELEASE_CHECKLIST.md`
 - third-party licenses for STN, IIW-CRF/DenseCRF, Waymo, nuScenes, ROS, and
@@ -170,12 +153,13 @@ Before public upload, review:
 
 ## Citation
 
-Citation metadata is pending final arXiv/publication information.
+Please cite the IROS 2026 paper. Replace the placeholder fields below with the
+final arXiv and proceedings metadata when available.
 
 ```bibtex
 @inproceedings{nidar2026,
   title     = {NIDAR: RGB-Conditioned LiDAR Intensity Synthesis},
-  author    = {Zhang Junjie and collaborators},
+  author    = {Zhang, Junjie and collaborators},
   booktitle = {IEEE/RSJ International Conference on Intelligent Robots and Systems},
   year      = {2026}
 }
@@ -183,5 +167,6 @@ Citation metadata is pending final arXiv/publication information.
 
 ## License
 
-License pending owner confirmation. Do not redistribute as a public release
-until the license file and third-party notices are finalized.
+Source code in this repository is released under the Apache License 2.0. Model
+weights, sample data, and third-party components may carry separate terms; check
+their artifact pages before redistribution.

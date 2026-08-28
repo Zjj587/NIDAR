@@ -28,29 +28,29 @@ def main():
         epilog="""
 示例用法:
   # 运行完整管道 (1-3)
-  python run_waymo_pipeline.py configs/waymo_example.yaml
+  python run_waymo_pipeline.py configs/my_waymo_demo.yaml
 
   # 只运行某个阶段
-  python run_waymo_pipeline.py configs/waymo_example.yaml --stages 1
-  python run_waymo_pipeline.py configs/waymo_example.yaml --stages 2,3
+  python run_waymo_pipeline.py configs/my_waymo_demo.yaml --stages 1
+  python run_waymo_pipeline.py configs/my_waymo_demo.yaml --stages 2,3
 
-  # 运行完整流程：生成 + 重映射 + 评估
-  python run_waymo_pipeline.py configs/waymo_example.yaml --stages 1,2,3,3.5,4
+  # 运行论文路线：生成 + R投影 + 重映射 + 评估
+  python run_waymo_pipeline.py configs/my_waymo_demo.yaml --stages 1,2,3,3.5,4 --use-deep --keep-remap-with-deep
 
   # 使用深度内在分解网络（替代传统 decompose.py）
-  python run_waymo_pipeline.py configs/waymo_example.yaml --stages 1,2,3,4 --use-deep
+  python run_waymo_pipeline.py configs/my_waymo_demo.yaml --stages 1,2,3,4 --use-deep
 
   # 只运行重映射和评估（假设已有stage3输出）
-  python run_waymo_pipeline.py configs/waymo_example.yaml --stages 3.5,4
+  python run_waymo_pipeline.py configs/my_waymo_demo.yaml --stages 3.5,4
 
   # 跳过某个阶段
-  python run_waymo_pipeline.py configs/waymo_example.yaml --skip-stages 1
+  python run_waymo_pipeline.py configs/my_waymo_demo.yaml --skip-stages 1
 
 阶段说明:
   1   : RGB -> Pseudo-NIR
   2   : Pseudo-NIR -> Reflectance (传统方法或Deep网络)
   3   : Reflectance -> Pointcloud Intensity
-  3.5 : Intensity Remap (Quantile Mapping) - Deep模式不需要
+  3.5 : Intensity Remap (Quantile Mapping)，论文R+remap路线需要
   4   : Evaluation (对比重映射后的强度与GT)
         """
     )
