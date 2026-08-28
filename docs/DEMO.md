@@ -63,6 +63,7 @@ $OUTPUT_ROOT/waymo_demo/
     gt_pointcloud/
       frame_000000_gt_intensity.npz
       frame_000000_gt_intensity.npy
+      frame_000000_gt_intensity.ply
   stage3_5_remapped/
     dis_learned_frame_000000_pseudo_intensity.npy
     dis_learned_frame_000000_pseudo_intensity.ply
@@ -71,6 +72,8 @@ $OUTPUT_ROOT/waymo_demo/
     frame_000000/
       frame_000000_metrics.json
       frame_000000_mask.png
+      frame_000000_gt_intensity.png
+      frame_000000_pred_intensity.png
       frame_000000_comparison.png
       frame_000000_comparison_masked.png
       frame_000000_comparison_masked_white.png

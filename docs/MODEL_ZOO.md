@@ -40,15 +40,15 @@ $DATA_ROOT/
           frame_000000_cam1.jpg
           frame_000000_cam2.jpg
           ...
-          frame_000002_cam5.jpg
+          frame_000001_cam5.jpg
           frame_000000_cam1.json
           ...
-          frame_000002_cam5.json
+          frame_000001_cam5.json
         pointclouds/
           frame_000000_raw_pc.npz
           frame_000000_lidar1.json
-          frame_000002_raw_pc.npz
-          frame_000002_lidar1.json
+          frame_000001_raw_pc.npz
+          frame_000001_lidar1.json
 ```
 
 The point cloud arrays must contain at least `x, y, z, intensity`. The camera
