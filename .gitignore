@@ -21,13 +21,13 @@ venv/
 env/
 
 # Datasets, bags, point clouds, and run outputs
-data/
-datasets/
-outputs/
-work/
-runs/
-logs/
-checkpoints/
+/data/
+/datasets/
+/outputs/
+/work/
+/runs/
+/logs/
+/checkpoints/
 *.bag
 *.pcd
 *.ply
