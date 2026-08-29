@@ -15,6 +15,27 @@ checkpoints and datasets are not stored in git.
 Replace the pending links with public download URLs after the artifacts are
 uploaded to an approved storage location.
 
+## Local Evidence Paths On zjj/li
+
+The following paths are non-portable local evidence for the project owner. They
+are intentionally included here so Zhang Junjie can find the current artifacts
+before replacing the pending public links. They are not the public quick-start
+paths.
+
+```text
+STN checkpoint:
+  /home1/cs-stereo/ckpt/47.pth
+
+IRNet checkpoint:
+  /home1/pseudo-intensity-pipeline/checkpoints/deep_intrinsic_v3_mask/checkpoints/epoch_010.pth
+
+Candidate demo sample source:
+  /home1/ZJJ/lidarrt/outputs/export/default/scene_ws4/exports/raw
+
+Last successful local demo output:
+  /home1/ZJJ/nidar_public_demo_smoke_20260828_rsync_104219/output/waymo_demo
+```
+
 ## Expected Weight Layout
 
 ```text

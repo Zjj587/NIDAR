@@ -1,15 +1,12 @@
-# Minimal Waymo-Style Demo
+# End-To-End Waymo-Style Demo
 
-The minimal demo is intended to show the complete paper route on a tiny
-Waymo-style export:
+The public demo is intended to feel like one operation: provide a Waymo-style
+raw export, run one command, and inspect a synthesized-intensity point cloud.
 
 ```text
-RGB image
-  -> STN pseudo-NIR
-  -> IRNet reflectance-like R
-  -> projection to point cloud
-  -> quantile remap
-  -> range-image evaluation and visual comparison
+Waymo-style raw input
+  -> NIDAR end-to-end synthesis
+  -> colored intensity point cloud and optional viewer
 ```
 
 ## Inputs
@@ -26,73 +23,77 @@ export WEIGHTS_ROOT=/path/to/nidar_weights
 The demo sample should be placed under:
 
 ```text
-$DATA_ROOT/waymo/demo_scene/raw/images
-$DATA_ROOT/waymo/demo_scene/raw/pointclouds
+$DATA_ROOT/waymo/demo_scene/raw/
+  images/
+  pointclouds/
 ```
 
 ## Command
 
 ```bash
 cd "$PROJECT_ROOT"
-cp inference/configs/waymo_public_template.yaml inference/configs/my_waymo_demo.yaml
-
-python inference/run_waymo_pipeline.py \
-  inference/configs/my_waymo_demo.yaml \
-  --stages 1,2,3,3.5,4 \
-  --use-deep \
-  --keep-remap-with-deep
+python inference/run_nidar_demo.py \
+  --input-root "$DATA_ROOT/waymo/demo_scene/raw" \
+  --weights-root "$WEIGHTS_ROOT" \
+  --output-root "$OUTPUT_ROOT/nidar_demo" \
+  --viewer auto
 ```
+
+Use `--viewer open3d` to force an Open3D point-cloud window, or
+`--viewer none` on a headless server. The internal pipeline log is saved, but
+the user-facing output is the compact `results/` directory.
 
 ## Expected Outputs
 
-The default config writes into `$OUTPUT_ROOT/waymo_demo`:
+The command writes into `$OUTPUT_ROOT/nidar_demo`:
 
 ```text
-$OUTPUT_ROOT/waymo_demo/
-  logs/
-    pipeline.log
-  stage1_pseudo_nir/
-    frame_000000_cam1_nir.png
-    ...
-  stage2_reflectance/
-    frame_000000_cam1_r.png
-    ...
-  stage3_pointcloud/
-    frame_000000_pseudo_intensity.npy
-    frame_000000_pseudo_intensity.ply
-    gt_pointcloud/
-      frame_000000_gt_intensity.npz
-      frame_000000_gt_intensity.npy
-      frame_000000_gt_intensity.ply
-  stage3_5_remapped/
-    dis_learned_frame_000000_pseudo_intensity.npy
-    dis_learned_frame_000000_pseudo_intensity.ply
-  stage4_evaluation/
+$OUTPUT_ROOT/nidar_demo/
+  nidar_demo_generated_config.yaml
+  nidar_internal_pipeline.log
+  results/
+    summary.json
     evaluation_summary.json
     frame_000000/
-      frame_000000_metrics.json
-      frame_000000_mask.png
-      frame_000000_gt_intensity.png
-      frame_000000_pred_intensity.png
-      frame_000000_comparison.png
-      frame_000000_comparison_masked.png
-      frame_000000_comparison_masked_white.png
+      nidar_intensity.npy
+      nidar_intensity.ply
+      nidar_intensity_colored.ply
+      nidar_intensity_preview.png
+      comparison.png
+      comparison_masked.png
+      comparison_masked_white.png
+      gt_intensity.png
+      pred_intensity.png
+      valid_mask.png
+      metrics.json
 ```
 
 ## What To Inspect
 
-- `stage1_pseudo_nir/*.png`: grayscale pseudo-NIR images generated from RGB.
-- `stage2_reflectance/*_r.png`: IRNet `R` output used by the paper route.
-- `stage3_pointcloud/*.ply`: pre-remap point cloud with synthesized intensity.
-- `stage3_5_remapped/*.ply`: final remapped point cloud with synthesized
-  intensity.
-- `stage4_evaluation/*/*_comparison.png`: vertical range-image comparison. The
-  top half is the ground-truth LiDAR intensity range image; the bottom half is
-  the NIDAR prediction rendered with the same colormap.
-- `stage4_evaluation/*/*_comparison_masked.png`: the same comparison restricted
-  to pixels where both GT and prediction are valid.
-- `stage4_evaluation/evaluation_summary.json`: aggregate RMSE, MAE, MedAE,
-  PSNR, SSIM, and optional LPIPS metrics.
+- `nidar_intensity_colored.ply`: final point cloud colored by synthesized
+  intensity. This is the primary demo output.
+- `nidar_intensity_preview.png`: static top-down preview for quick inspection.
+- `comparison.png`: vertical range-image comparison. The top half is the
+  ground-truth LiDAR intensity range image; the bottom half is the NIDAR
+  prediction rendered with the same colormap.
+- `comparison_masked.png`: the same comparison restricted to pixels where both
+  GT and prediction are valid.
+- `summary.json` and `evaluation_summary.json`: machine-readable output paths
+  and aggregate RMSE, MAE, MedAE, PSNR, and SSIM metrics.
 
-For the quickest visual check, open one `*_comparison.png` together with the
-matching remapped `.ply` file.
+For the quickest visual check, inspect `nidar_intensity_colored.ply` in the
+viewer and open `comparison.png`.
+
+## Advanced Pipeline Command
+
+The single demo command internally uses the paper-aligned route
+`RGB -> pseudo-NIR -> R -> remap -> point cloud`. Advanced users can run the
+lower-level pipeline directly:
+
+```bash
+python inference/run_waymo_pipeline.py \
+  inference/configs/waymo_public_template.yaml \
+  --stages 1,2,3,3.5,4 \
+  --use-deep \
+  --keep-remap-with-deep
+```

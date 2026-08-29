@@ -13,7 +13,9 @@ development machine.
 - [x] `inference/src/utils/config.py` expands `${VAR}` and `~` in YAML strings.
 - [x] Waymo and nuScenes CLIs provide `--keep-remap-with-deep` for the
   paper-aligned `R+remap` route while preserving the older default behavior.
-- [x] `docs/DEMO.md` documents the minimal Waymo-style demo command, output
+- [x] `inference/run_nidar_demo.py` provides a single end-to-end demo command
+  with compact final outputs and optional Open3D visualization.
+- [x] `docs/DEMO.md` documents the end-to-end Waymo-style demo command, output
   tree, and qualitative comparison images.
 - [x] `docs/MODEL_ZOO.md` documents the external checkpoint and sample-data
   artifact layout.
@@ -27,6 +29,9 @@ development machine.
 - [ ] Public checkpoint distribution policy for STN and IRNet weights.
 - [ ] Public sample data policy and expected dataset layout.
 - [ ] Final arXiv citation and project-page link.
+- [ ] Replace local owner-review paths in `docs/MODEL_ZOO.md` with public
+  artifact links before broad external announcement, or keep them clearly
+  marked as non-portable local evidence.
 
 ## Exclude From Public Source Packages
 
@@ -51,6 +56,7 @@ Run from the repository root:
 
 ```bash
 python3 -m py_compile \
+  inference/run_nidar_demo.py \
   inference/run_waymo_pipeline.py \
   inference/src/utils/config.py \
   inference/src/models/deep_intrinsic_net.py \
@@ -58,6 +64,7 @@ python3 -m py_compile \
   inference/src/models/stn_wrapper.py
 
 python3 inference/run_waymo_pipeline.py --help
+python3 inference/run_nidar_demo.py --help
 
 python tools/release/make_source_package.py --out-dir /path/outside/repo/nidar_source_check
 ```

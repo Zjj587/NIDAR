@@ -87,38 +87,49 @@ Artifact links and the demo-data layout are tracked in:
 - `docs/MODEL_ZOO.md`
 - `docs/DEMO.md`
 
-## Quick Start: Minimal Waymo-Style Demo
+## Quick Start: End-To-End Demo
 
-Download or prepare the artifacts listed in `docs/MODEL_ZOO.md`, then copy and
-edit the public template:
+Download or prepare the artifacts listed in `docs/MODEL_ZOO.md`, then place the
+sample under one Waymo-style raw directory containing `images/` and
+`pointclouds/`.
 
 ```bash
 cd "$PROJECT_ROOT"
-cp inference/configs/waymo_public_template.yaml inference/configs/my_waymo_demo.yaml
+python inference/run_nidar_demo.py \
+  --input-root "$DATA_ROOT/waymo/demo_scene/raw" \
+  --weights-root "$WEIGHTS_ROOT" \
+  --output-root "$OUTPUT_ROOT/nidar_demo" \
+  --viewer auto
 ```
 
-Run the paper-aligned `R+remap` route:
+The command runs the paper-aligned NIDAR route end to end and writes compact
+outputs under `$OUTPUT_ROOT/nidar_demo/results`:
+
+```text
+results/
+  summary.json
+  frame_000000/
+    nidar_intensity.npy
+    nidar_intensity.ply
+    nidar_intensity_colored.ply
+    nidar_intensity_preview.png
+    comparison.png
+    comparison_masked.png
+    metrics.json
+```
+
+If a desktop display is available, `--viewer auto` opens the first
+`nidar_intensity_colored.ply` in Open3D. Use `--viewer open3d` to force the
+viewer or `--viewer none` on headless machines.
+
+Advanced users can still call the lower-level pipeline directly:
 
 ```bash
 python inference/run_waymo_pipeline.py \
-  inference/configs/my_waymo_demo.yaml \
+  inference/configs/waymo_public_template.yaml \
   --stages 1,2,3,3.5,4 \
   --use-deep \
   --keep-remap-with-deep
-```
-
-The demo writes pseudo-NIR images, IRNet `R` images, pre-remap and remapped
-point clouds, per-frame range-image comparison PNGs, and
-`evaluation_summary.json` under `$OUTPUT_ROOT/waymo_demo`. See `docs/DEMO.md`
-for the exact output tree and what to inspect visually.
-
-For backward-compatible direct deep output without remapping:
-
-```bash
-python inference/run_waymo_pipeline.py \
-  inference/configs/my_waymo_demo.yaml \
-  --stages 1,2,3,4 \
-  --use-deep
 ```
 
 ## Other Pipelines
