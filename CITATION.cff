@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: Please cite the NIDAR paper when using this research software.
+type: software
+title: NIDAR
+authors:
+  - family-names: Zhang
+    given-names: Junjie
+repository-code: https://github.com/Zjj587/NIDAR
+url: https://nidar-web.github.io/
+preferred-citation:
+  type: article
+  title: 'NIDAR: NIR-Guided Intrinsic Decomposition for Scalable Scene-Agnostic LiDAR Intensity Reconstruction'
+  authors:
+    - family-names: Zhang
+      given-names: Junjie
+    - family-names: Yin
+      given-names: Jie
+    - family-names: Qian
+      given-names: Kefei
+    - family-names: Li
+      given-names: Jie
+    - family-names: Jia
+      given-names: Mengpei
+    - family-names: Dun
+      given-names: Yajuan
+    - family-names: Chu
+      given-names: Wenbo
+    - family-names: Li
+      given-names: Guofa
+  journal: arXiv
+  year: 2026
+  url: https://arxiv.org/abs/2609.36878

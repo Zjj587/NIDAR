@@ -11,6 +11,18 @@ Waymo-style raw input
 
 ## Inputs
 
+For a CPU-only Linux x86_64 machine with a Python 3.10 environment, use:
+
+```bash
+python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements.txt -c constraints-cpu-tested.txt
+# Optional desktop window:
+python -m pip install -r requirements-viewer.txt -c constraints-cpu-tested.txt
+```
+
+The constraints record the release-check environment; they are not a CUDA
+environment specification. Add `--device cpu` to the demo command below.
+
 Download or prepare the artifacts listed in `docs/MODEL_ZOO.md`, then set:
 
 ```bash
@@ -19,6 +31,21 @@ export DATA_ROOT=/path/to/nidar_demo_data
 export OUTPUT_ROOT=/path/to/nidar_demo_outputs
 export WEIGHTS_ROOT=/path/to/nidar_weights
 ```
+
+Prepare the public checkpoints and bundled Waymo calibration with:
+
+```bash
+python tools/download_weights.py --weights-root "$WEIGHTS_ROOT"
+```
+
+This pins the published model revision, verifies file sizes and SHA-256, and
+creates the expected STN/IRNet/quantile subdirectories without a Hub login.
+It does not download sample data; the portable two-frame sample is still pending.
+
+Large downloads print progress periodically. A file is ready only after the
+downloader reports that its size and SHA-256 have been verified. An interrupted
+download is removed and retried from the start on the next invocation; already
+verified files are reused.
 
 The demo sample should be placed under:
 
@@ -42,6 +69,22 @@ python inference/run_nidar_demo.py \
 Use `--viewer open3d` to force an Open3D point-cloud window, or
 `--viewer none` on a headless server. The internal pipeline log is saved, but
 the user-facing output is the compact `results/` directory.
+
+Install `requirements-viewer.txt` for the window. Drag to rotate the cloud,
+scroll to zoom, and close the window to finish the command. Static previews and
+comparison images do not require Open3D. `--device cpu` selects CPU inference.
+
+The default requests two frames. Use `--frame-count 1` for a one-frame input;
+the command rejects missing frames, camera files, and partial pipeline outputs.
+It also checks runtime dependencies before creating or overwriting outputs.
+`--no-eval` skips the GT comparison but still produces the intensity point cloud.
+The default IRNet checkpoint must be the U-Net + DeepLab model listed in the
+model zoo. Its R branch is projected and remapped; I_hat is not used as the
+final output.
+
+When preparing a sample archive, copy the actual image, point-cloud, and
+calibration files. A directory containing symlinks into a development machine
+is not a portable sample package.
 
 ## Expected Outputs
 
@@ -80,6 +123,9 @@ $OUTPUT_ROOT/nidar_demo/
   GT and prediction are valid.
 - `summary.json` and `evaluation_summary.json`: machine-readable output paths
   and aggregate RMSE, MAE, MedAE, PSNR, and SSIM metrics.
+
+Unavailable metrics are `null` in the public `results/` JSON files. In
+particular, default runs do not compute LPIPS; `null` does not mean zero error.
 
 For the quickest visual check, inspect `nidar_intensity_colored.ply` in the
 viewer and open `comparison.png`.

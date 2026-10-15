@@ -179,6 +179,8 @@ def main():
                     checkpoint_path=args.deep_checkpoint,
                     skip_existing=config.get('stage2', {}).get('skip_existing', False)
                 )
+                if not result.get('success') or result.get('errors', 0):
+                    raise RuntimeError(f"Deep intrinsic inference did not complete: {result}")
                 count = result.get('processed', 0)
             else:
                 # 使用传统方法

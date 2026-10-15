@@ -1,183 +1,165 @@
-# NIDAR: RGB-Conditioned LiDAR Intensity Synthesis
+<h1 align="center">NIDAR</h1>
 
-NIDAR synthesizes dense LiDAR intensity-like observations from RGB appearance
-and simulator or dataset geometry. The pipeline combines spectral transfer,
-intrinsic decomposition, point-cloud projection, and distribution calibration so
-that simulated point clouds can carry an intensity channel without per-scene
-network fitting in the evaluated settings.
+<p align="center"><strong>NIR-Guided Intrinsic Decomposition for Scalable Scene-Agnostic<br>LiDAR Intensity Reconstruction</strong></p>
+<p align="center">Official implementation &middot; IROS 2026</p>
 
-This repository is the public source-code home for the IROS 2026 accepted NIDAR
-project. The first public package focuses on Waymo-style inference and demo
-reproduction. Pretrained weights, sample data, and third-party notices are
-tracked separately from git.
+<p align="center">
+  <a href="https://arxiv.org/abs/2609.36878"><img src="https://img.shields.io/badge/arXiv-2609.36878-b31b1b" alt="Paper on arXiv"></a>
+  <a href="https://huggingface.co/zhangjunjie587/NIDAR"><img src="https://img.shields.io/badge/Hugging_Face-Weights-f4c542" alt="Weights on Hugging Face"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Code-Apache_2.0-3776ab" alt="Code license: Apache 2.0"></a>
+</p>
 
-## Pipeline
+<p align="center">
+  <a href="https://nidar-web.github.io/">Project page</a> &middot;
+  <a href="#quick-start">Quick start</a> &middot;
+  <a href="docs/DEMO.md">Demo guide</a> &middot;
+  <a href="docs/MODEL_ZOO.md">Models</a> &middot;
+  <a href="docs/ROADMAP.md">Roadmap</a>
+</p>
 
-The paper-aligned inference route is:
+**Add a synthesized intensity channel to an existing point cloud.** NIDAR
+combines RGB appearance, a pseudo-NIR prior, intrinsic decomposition, and
+distribution calibration. Inputs include RGB images, XYZ geometry, and
+camera/LiDAR calibration; outputs include intensity-valued point clouds and
+visual comparisons.
 
-```text
-RGB image
-  -> STN pseudo-NIR image
-  -> IRNet reflectance-like output R
-  -> LiDAR-camera projection
-  -> quantile remapping
-  -> point cloud with synthesized intensity
-```
+<table>
+  <tr><th width="50%">Ground-truth intensity</th><th width="50%">NIDAR intensity</th></tr>
+  <tr>
+    <td><img src="docs/assets/nuscenes-gt.png" width="100%" alt="Ground-truth intensity-colored nuScenes point cloud"></td>
+    <td><img src="docs/assets/nuscenes-nidar.png" width="100%" alt="NIDAR intensity-colored point cloud for the same nuScenes example"></td>
+  </tr>
+</table>
 
-NIDAR outputs an intensity-like signal for simulation and evaluation. It should
-not be described as sensor-independent reconstruction of absolute returned
-power.
+*Existing nuScenes research example from the [project page](https://nidar-web.github.io/#nuscenes-comparisons).
+The initial portable demo targets Waymo-style exports; this figure is not a new release-validation run.*
 
-## Repository Layout
+> **Release preview:** public weights and a CPU-tested inference route are available.
+> A two-frame run took 27.4 seconds on a ThinkPad CPU; see the
+> [acceptance scope and limits](docs/RELEASE_ACCEPTANCE.md). The public sample
+> download is still pending.
 
-```text
-inference/    Waymo-style inference pipeline and core models.
-tools/        Release-package helper scripts.
-docs/         Demo, artifact, and release notes.
-```
+## Quick Start
 
-Training code, ROS utilities, simulator-specific integrations, and diagnostic
-experiment harnesses are not part of this first source package.
-
-## Environment
-
-Create a Python environment and install the core dependencies:
+Use Python 3.10 and PyTorch 2.6 or newer. PyTorch 2.8 is used for checkpoint
+release checks. Install a PyTorch build appropriate for your CPU/GPU.
 
 ```bash
-conda create -n nidar python=3.10
+git clone https://github.com/Zjj587/NIDAR.git
+cd NIDAR
+conda create -n nidar python=3.10 -y
 conda activate nidar
 pip install -r requirements.txt
+python tools/download_weights.py --weights-root ./weights
 ```
 
-Optional routes need extra components:
+The downloader uses a pinned Hugging Face revision and checks file sizes and
+SHA-256. No login is needed. Add `--check-only` to verify existing files.
 
-- Creating your own Waymo export needs the Waymo Open Dataset package matching
-  your TensorFlow version. The minimal demo uses already exported Waymo-style
-  files.
-- The legacy IIW-CRF route uses the Cython/C++ extension under
-  `inference/krahenbuhl2013`.
-
-## Model Zoo, Weights, And Data
-
-Do not hardcode private machine paths in public configs. Use environment
-variables and copy a template config:
+Prepare a raw export using the [input layout](docs/MODEL_ZOO.md#expected-demo-data-layout),
+then run the complete pipeline:
 
 ```bash
-export PROJECT_ROOT=/path/to/NIDAR
-export DATA_ROOT=/path/to/datasets
-export OUTPUT_ROOT=/path/to/nidar_outputs
-export WEIGHTS_ROOT=/path/to/nidar_weights
-```
-
-Expected weight layout:
-
-```text
-$WEIGHTS_ROOT/
-  stn/47.pth
-  irnet/epoch_010.pth
-  quantile/wintensity_mapping_quantile_model.pkl
-```
-
-Small quantile mapping files are present under `inference/quantile_model/`.
-Large STN/IRNet checkpoints should be distributed separately after owner and
-license review.
-
-Artifact links and the demo-data layout are tracked in:
-
-- `docs/MODEL_ZOO.md`
-- `docs/DEMO.md`
-
-## Quick Start: End-To-End Demo
-
-Download or prepare the artifacts listed in `docs/MODEL_ZOO.md`, then place the
-sample under one Waymo-style raw directory containing `images/` and
-`pointclouds/`.
-
-```bash
-cd "$PROJECT_ROOT"
 python inference/run_nidar_demo.py \
-  --input-root "$DATA_ROOT/waymo/demo_scene/raw" \
-  --weights-root "$WEIGHTS_ROOT" \
-  --output-root "$OUTPUT_ROOT/nidar_demo" \
+  --input-root /path/to/exported_scene/raw \
+  --weights-root ./weights \
+  --output-root ./outputs/demo \
   --viewer auto
 ```
 
-The command runs the paper-aligned NIDAR route end to end and writes compact
-outputs under `$OUTPUT_ROOT/nidar_demo/results`:
+The default processes two frames. Use `--frame-count 1` for a one-frame input,
+`--device cpu` for CPU inference, or `--viewer none` on a headless machine.
+The sample download is pending, so this command requires a prepared export.
+
+For the interactive Open3D window, also run `pip install -r requirements-viewer.txt`.
+Static PNG previews do not need Open3D. See the [demo guide](docs/DEMO.md).
+
+## What You Get
+
+Outputs are written under `./outputs/demo/results/`:
+
+| Output | Purpose |
+| --- | --- |
+| `frame_*/nidar_intensity.npy` | XYZ coordinates and synthesized intensity |
+| `frame_*/nidar_intensity.ply` | Point cloud with scalar intensity |
+| `frame_*/nidar_intensity_colored.ply` | Point cloud ready for color visualization |
+| `frame_*/nidar_intensity_preview.png` | Static point-cloud preview |
+| `frame_*/comparison.png` | Ground-truth/prediction range-image comparison |
+| `frame_*/comparison_masked.png` | Comparison restricted to jointly valid pixels |
+| `summary.json`, `evaluation_summary.json` | Output manifest and evaluation summary |
+
+Evaluation requires ground-truth intensity in the export. `--no-eval` skips
+comparison images and metrics while retaining the synthesized point cloud.
+See [troubleshooting](docs/TROUBLESHOOTING.md) for setup and output questions.
+
+## Method And Models
 
 ```text
-results/
-  summary.json
-  frame_000000/
-    nidar_intensity.npy
-    nidar_intensity.ply
-    nidar_intensity_colored.ply
-    nidar_intensity_preview.png
-    comparison.png
-    comparison_masked.png
-    metrics.json
+RGB -> STN pseudo-NIR -> IRNet R -> LiDAR-camera projection
+    -> quantile remapping -> intensity point cloud
 ```
 
-If a desktop display is available, `--viewer auto` opens the first
-`nidar_intensity_colored.ply` in Open3D. Use `--viewer open3d` to force the
-viewer or `--viewer none` on headless machines.
+The default route uses **R + quantile remapping**. IRNet contains a U-Net
+intrinsic network and a DeepLab intensity head; the direct intensity output
+I_hat is not the final signal in this route.
 
-Advanced users can still call the lower-level pipeline directly:
+| Artifact | Runtime path | Availability |
+| --- | --- | --- |
+| STN | `weights/stn/47.pth` | [Hugging Face](https://huggingface.co/zhangjunjie587/NIDAR) |
+| IRNet, U-Net + DeepLab | `weights/irnet/epoch_010.pth` | [Hugging Face](https://huggingface.co/zhangjunjie587/NIDAR) |
+| Waymo quantile calibration | `weights/quantile/wintensity_mapping_quantile_model.pkl` | Bundled and copied by the downloader |
 
-```bash
-python inference/run_waymo_pipeline.py \
-  inference/configs/waymo_public_template.yaml \
-  --stages 1,2,3,3.5,4 \
-  --use-deep \
-  --keep-remap-with-deep
-```
+The selected STN has local training provenance based on cs-stereo and is
+frozen for inference. Exact identities, provenance, and owner backup locations
+are in the [model zoo](docs/MODEL_ZOO.md). Historical small-head IRNet
+checkpoints are incompatible with this default.
 
-## Other Pipelines
+## Supported Workflows
 
-nuScenes, Isaac Sim, UE5, ROS, and training utilities exist in the development
-tree but are not included in this first public source package. They should be
-released only after separate packaging, dependency, and license review.
+| Workflow | Current scope |
+| --- | --- |
+| Waymo-style exported-data inference | CPU two-frame acceptance passed; sample download pending |
+| Static previews and MAE/RMSE/SSIM evaluation | Included |
+| Interactive point-cloud viewing | Optional Open3D dependency |
+| nuScenes, Isaac Sim, and UE5 | Research results on the project page; adapters not included here |
+| Training and downstream experiment harnesses | Planned follow-up releases |
 
-## P0 Diagnostic Artifacts
+See the [roadmap](docs/ROADMAP.md). A published research result and a tested
+public integration are listed separately.
 
-The controlled pseudo-NIR-versus-RGB diagnostic materials used for the arXiv
-revision are kept as research artifacts, not as part of this first public source
-package. The P0 results support the main design conclusion: RGB and pseudo-NIR
-can reach similar sparse intensity validation loss, while pseudo-NIR is stronger
-through the reflectance-calibration `R+remap` route in the evaluated setup.
+## Limits
 
-## Training
+NIDAR estimates an intensity-like signal; it does not recover sensor-independent
+absolute returned power or generate XYZ from RGB. Range, visibility, exposure,
+and sensor domain affect the result. Quantile calibration is Waymo-domain
+specific. Intrinsic outputs may lose detail or vary between adjacent frames.
 
-Training code is planned for a later release. This first package documents and
-tests the inference route.
+## Contributing And Support
 
-## Release Notes
-
-Before publishing external artifacts, review:
-
-- `docs/OPEN_SOURCE_RELEASE_CHECKLIST.md`
-- third-party licenses for STN, IIW-CRF/DenseCRF, Waymo, nuScenes, ROS, and
-  simulator integrations;
-- whether generated artifacts such as `__pycache__`, `.pyc`, `.so`, large
-  checkpoints, raw datasets, and local command logs are excluded from the public
-  package.
+Read [troubleshooting](docs/TROUBLESHOOTING.md), or open a
+[GitHub issue](https://github.com/Zjj587/NIDAR/issues) with the command,
+environment, checkpoint identities, and relevant log excerpt.
+[CONTRIBUTING.md](CONTRIBUTING.md) describes focused fixes and checks.
 
 ## Citation
 
-Please cite the IROS 2026 paper. Replace the placeholder fields below with the
-final arXiv and proceedings metadata when available.
-
 ```bibtex
-@inproceedings{nidar2026,
-  title     = {NIDAR: RGB-Conditioned LiDAR Intensity Synthesis},
-  author    = {Zhang, Junjie and collaborators},
-  booktitle = {IEEE/RSJ International Conference on Intelligent Robots and Systems},
-  year      = {2026}
+@misc{zhang2026nidar,
+  author = {Junjie Zhang and Jie Yin and Kefei Qian and Jie Li and
+            Mengpei Jia and Yajuan Dun and Wenbo Chu and Guofa Li},
+  title = {{NIDAR}: {NIR}-Guided Intrinsic Decomposition for Scalable Scene-Agnostic {LiDAR} Intensity Reconstruction},
+  year = {2026},
+  eprint = {2609.36878},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.RO},
+  url = {https://arxiv.org/abs/2609.36878}
 }
 ```
 
-## License
+## License And Acknowledgments
 
-Source code in this repository is released under the Apache License 2.0. Model
-weights, sample data, and third-party components may carry separate terms; check
-their artifact pages before redistribution.
+The source code is released under [Apache 2.0](LICENSE). Weights, calibration,
+datasets, and third-party components have separate terms; see the
+[artifact notices](https://huggingface.co/zhangjunjie587/NIDAR/blob/main/LICENSE_NOTICES.md).
+The STN builds on [cs-stereo](https://github.com/tiancheng-zhi/cs-stereo).
+Media provenance is in [docs/assets/README.md](docs/assets/README.md).

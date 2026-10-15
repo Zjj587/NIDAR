@@ -1,0 +1,2 @@
+# Optional draggable point-cloud window; install after requirements.txt.
+open3d

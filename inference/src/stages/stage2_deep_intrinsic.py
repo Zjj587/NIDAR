@@ -343,6 +343,8 @@ def run_stage2_deep(
             stem = stem[:-11]
         elif stem.endswith('_pseudo-nir'):
             stem = stem[:-11]
+        elif stem.endswith('_nir'):
+            stem = stem[:-4]
 
         output_path = output_dir / f"{stem}_r.png"
 
@@ -375,12 +377,13 @@ def run_stage2_deep(
             })
 
     # 汇总结果
+    error_count = len([r for r in results if 'error' in r])
     summary = {
-        'success': True,
+        'success': error_count == 0,
         'total': len(images),
         'processed': processed,
         'skipped': skipped,
-        'errors': len([r for r in results if 'error' in r]),
+        'errors': error_count,
         'input_dir': str(input_dir),
         'output_dir': str(output_dir),
         'checkpoint': checkpoint,

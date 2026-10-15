@@ -9,7 +9,9 @@ intensity point cloud in an Open3D viewer.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -26,6 +28,20 @@ INFERENCE_ROOT = PROJECT_ROOT / "inference"
 DEFAULT_CONFIG = INFERENCE_ROOT / "configs" / "waymo_public_template.yaml"
 DEFAULT_MODEL_CONFIG = INFERENCE_ROOT / "configs" / "deep_intrinsic_public_model.yaml"
 DEFAULT_BUNDLED_QUANTILE = INFERENCE_ROOT / "quantile_model" / "wintensity_mapping_quantile_model.pkl"
+
+
+def positive_int(value: str) -> int:
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return number
+
+
+def nonnegative_int(value: str) -> int:
+    number = int(value)
+    if number < 0:
+        raise argparse.ArgumentTypeError("must be a nonnegative integer")
+    return number
 
 
 def parse_args() -> argparse.Namespace:
@@ -48,9 +64,9 @@ def parse_args() -> argparse.Namespace:
         default="outputs/nidar_demo",
         help="Directory for compact demo outputs.",
     )
-    parser.add_argument("--frame-count", type=int, default=2, help="Number of frames to process.")
-    parser.add_argument("--start-frame", type=int, default=0, help="Index into the discovered frame list.")
-    parser.add_argument("--step", type=int, default=1, help="Stride in the discovered frame list.")
+    parser.add_argument("--frame-count", type=positive_int, default=2, help="Number of frames to process.")
+    parser.add_argument("--start-frame", type=nonnegative_int, default=0, help="Index into the discovered frame list.")
+    parser.add_argument("--step", type=positive_int, default=1, help="Stride in the discovered frame list.")
     parser.add_argument("--device", default="cuda", help="Torch device requested for STN/IRNet.")
     parser.add_argument(
         "--quantile-model",
@@ -70,7 +86,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--preview-points",
-        type=int,
+        type=positive_int,
         default=80000,
         help="Maximum number of points used for the static preview PNG.",
     )
@@ -88,15 +104,27 @@ def parse_args() -> argparse.Namespace:
 
 
 def require_file(path: Path, label: str) -> Path:
-    if not path.exists():
+    if not path.is_file():
         raise FileNotFoundError(f"{label} not found: {path}")
-    return path
+    return path.resolve()
 
 
 def require_dir(path: Path, label: str) -> Path:
     if not path.is_dir():
         raise FileNotFoundError(f"{label} directory not found: {path}")
-    return path
+    return path.resolve()
+
+
+def validate_runtime(args: argparse.Namespace) -> None:
+    modules = ["torch", "cv2", "matplotlib", "plyfile"]
+    if not args.no_eval:
+        modules.append("skimage")
+    missing = [name for name in modules if importlib.util.find_spec(name) is None]
+    if missing:
+        raise RuntimeError(
+            f"Missing demo dependencies: {', '.join(missing)}. "
+            "Install the core environment with: pip install -r requirements.txt"
+        )
 
 
 def resolve_paths(args: argparse.Namespace) -> Dict[str, Path]:
@@ -114,7 +142,13 @@ def resolve_paths(args: argparse.Namespace) -> Dict[str, Path]:
     else:
         weights_quantile = weights_root / "quantile" / "wintensity_mapping_quantile_model.pkl"
         quantile_model = weights_quantile if weights_quantile.exists() else DEFAULT_BUNDLED_QUANTILE
-        require_file(quantile_model, "quantile model")
+        quantile_model = require_file(quantile_model, "quantile model")
+
+    # --overwrite must never remove an input or checkpoint directory.
+    for generated_dir in [output_root / "results", output_root / "_nidar_work"]:
+        for source in [input_root, images_dir, pointcloud_dir, weights_root, stn_ckpt, irnet_ckpt, quantile_model]:
+            if source == generated_dir or generated_dir in source.parents:
+                raise ValueError(f"Output directory would overwrite an input artifact: {source}")
 
     return {
         "input_root": input_root,
@@ -128,6 +162,51 @@ def resolve_paths(args: argparse.Namespace) -> Dict[str, Path]:
         "work_dir": output_root / "_nidar_work",
         "results_dir": output_root / "results",
     }
+
+
+def validate_input(args: argparse.Namespace, paths: Dict[str, Path]) -> Dict:
+    from src.datasets.waymo_dataset import WaymoDatasetWrapper
+
+    dataset = WaymoDatasetWrapper(
+        paths["images_dir"], paths["pointcloud_dir"],
+        start_frame=args.start_frame, num_frames=args.frame_count, step=args.step,
+    )
+    if len(dataset) != args.frame_count:
+        raise ValueError(
+            f"Requested {args.frame_count} frames, but found {len(dataset)} after selection. "
+            "Check --start-frame/--step or reduce --frame-count."
+        )
+
+    manifest = {"frames": [], "images": []}
+    for frame_id in dataset.frames:
+        frame = f"frame_{frame_id:06d}"
+        info = dataset.get_frame_info(frame_id)
+        if not info["cameras"]:
+            raise ValueError(f"No camera calibrations found for {frame}")
+        if info["pointcloud_path"] is None:
+            raise FileNotFoundError(f"Input point cloud missing for {frame}")
+        dataset.load_lidar_calibration(frame_id)
+
+        for image_path in paths["images_dir"].glob(f"{frame}_cam*.jpg"):
+            require_file(image_path.with_suffix(".json"), "camera calibration")
+        for cam_id in info["cameras"]:
+            if cam_id not in info["image_paths"]:
+                raise FileNotFoundError(f"Input image missing: {frame}_cam{cam_id}.jpg")
+            calibration = dataset.load_calibration(frame_id, cam_id)
+            if calibration["width"] <= 0 or calibration["height"] <= 0:
+                raise ValueError(f"Invalid camera dimensions: {frame}_cam{cam_id}")
+            if len(calibration["intrinsic"]) != 4 or not np.isfinite(calibration["extrinsic"]).all():
+                raise ValueError(f"Invalid camera calibration: {frame}_cam{cam_id}")
+            dataset.load_image(frame_id, cam_id)
+            manifest["images"].append(f"{frame}_cam{cam_id}")
+        manifest["frames"].append(frame)
+    return manifest
+
+
+def validate_intermediate_outputs(manifest: Dict, paths: Dict[str, Path]) -> None:
+    for image in manifest["images"]:
+        require_file(paths["work_dir"] / "stage1_pseudo_nir" / f"{image}_nir.png", "pseudo-NIR output")
+        require_file(paths["work_dir"] / "stage2_reflectance" / f"{image}_r.png", "IRNet R output")
 
 
 def prepare_output(paths: Dict[str, Path], overwrite: bool) -> None:
@@ -226,7 +305,6 @@ def intensity_colors(intensity: np.ndarray, cmap_name: str = "cividis") -> np.nd
     import matplotlib
 
     matplotlib.use("Agg")
-    from matplotlib import cm
 
     values = intensity.astype(np.float32)
     finite = np.isfinite(values)
@@ -240,7 +318,7 @@ def intensity_colors(intensity: np.ndarray, cmap_name: str = "cividis") -> np.nd
         lo = float(values[finite].min())
     denom = max(hi - lo, 1e-6)
     norm = np.clip((values - lo) / denom, 0.0, 1.0)
-    rgba = cm.get_cmap(cmap_name)(norm)
+    rgba = matplotlib.colormaps[cmap_name](norm)
     return (rgba[:, :3] * 255).astype(np.uint8)
 
 
@@ -297,25 +375,52 @@ def frame_name_from_remapped(path: Path) -> str:
     return stem.replace("_pseudo_intensity", "")
 
 
-def collect_results(args: argparse.Namespace, paths: Dict[str, Path], internal_log: Path) -> Dict:
+def copy_json_result(source: Path, destination: Path) -> None:
+    """Write unavailable metrics as null in the public JSON output contract."""
+    def normalize(value):
+        if isinstance(value, dict):
+            return {key: normalize(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [normalize(item) for item in value]
+        if isinstance(value, float) and not math.isfinite(value):
+            return None
+        return value
+
+    with source.open("r", encoding="utf-8") as stream:
+        data = normalize(json.load(stream))
+    with destination.open("w", encoding="utf-8") as stream:
+        json.dump(data, stream, indent=2, allow_nan=False)
+
+
+def collect_results(args: argparse.Namespace, paths: Dict[str, Path], internal_log: Path,
+                    expected_frames: List[str]) -> Dict:
     stage3_5_dir = paths["work_dir"] / "stage3_5_remapped"
     eval_dir = paths["work_dir"] / "stage4_evaluation"
     results_dir = paths["results_dir"]
 
     remapped_files = sorted(stage3_5_dir.glob("dis_learned_*_pseudo_intensity.npy"))
-    if not remapped_files:
-        raise FileNotFoundError(f"No remapped point clouds found in {stage3_5_dir}")
+    actual_frames = [frame_name_from_remapped(path) for path in remapped_files]
+    if sorted(actual_frames) != sorted(expected_frames):
+        raise RuntimeError(
+            f"Incomplete remapped outputs: expected {expected_frames}, found {actual_frames}"
+        )
 
     summary = {
         "input_root": str(paths["input_root"]),
         "output_root": str(paths["output_root"]),
         "internal_log": str(internal_log),
+        "route": "RGB -> pseudo-NIR -> IRNet R -> projection -> quantile remapping",
+        "irnet_model_config": str(DEFAULT_MODEL_CONFIG),
+        "stn_checkpoint": str(paths["stn_ckpt"]),
+        "irnet_checkpoint": str(paths["irnet_ckpt"]),
+        "quantile_model": str(paths["quantile_model"]),
+        "frame_count": len(expected_frames),
         "frames": [],
     }
 
     eval_summary = eval_dir / "evaluation_summary.json"
     if eval_summary.exists():
-        shutil.copy2(eval_summary, results_dir / "evaluation_summary.json")
+        copy_json_result(eval_summary, results_dir / "evaluation_summary.json")
         summary["evaluation_summary"] = str(results_dir / "evaluation_summary.json")
         if not args.no_eval:
             with open(eval_summary, "r", encoding="utf-8") as f:
@@ -327,7 +432,7 @@ def collect_results(args: argparse.Namespace, paths: Dict[str, Path], internal_l
                 for name, value in eval_data.get("individual", {}).items()
                 if isinstance(value, dict) and value.get("error")
             }
-            if num_samples == 0 or num_success != num_samples or errors:
+            if num_samples != len(expected_frames) or num_success != num_samples or errors:
                 raise RuntimeError(
                     "Evaluation did not complete for every frame. "
                     f"num_success={num_success}, num_samples={num_samples}, errors={errors}"
@@ -341,7 +446,9 @@ def collect_results(args: argparse.Namespace, paths: Dict[str, Path], internal_l
         frame_dir.mkdir(parents=True, exist_ok=True)
 
         points = np.load(str(remapped_npy))
-        colors = intensity_colors(points[:, 3] if points.shape[1] > 3 else np.zeros(len(points)))
+        if points.ndim != 2 or points.shape[1] != 4 or len(points) == 0 or not np.isfinite(points).all():
+            raise ValueError(f"Expected a nonempty finite [N, 4] intensity point cloud: {remapped_npy}")
+        colors = intensity_colors(points[:, 3])
 
         final_npy = frame_dir / "nidar_intensity.npy"
         scalar_ply = frame_dir / "nidar_intensity.ply"
@@ -350,8 +457,8 @@ def collect_results(args: argparse.Namespace, paths: Dict[str, Path], internal_l
 
         shutil.copy2(remapped_npy, final_npy)
         source_scalar_ply = remapped_npy.with_suffix(".ply")
-        if source_scalar_ply.exists():
-            shutil.copy2(source_scalar_ply, scalar_ply)
+        require_file(source_scalar_ply, "scalar intensity PLY")
+        shutil.copy2(source_scalar_ply, scalar_ply)
         write_colored_ply(points, colors, colored_ply)
         save_preview_png(points, preview_png, args.preview_points)
 
@@ -369,7 +476,10 @@ def collect_results(args: argparse.Namespace, paths: Dict[str, Path], internal_l
             src = source_eval_dir / src_name
             if src.exists():
                 dst = frame_dir / dst_name
-                shutil.copy2(src, dst)
+                if dst.suffix == ".json":
+                    copy_json_result(src, dst)
+                else:
+                    shutil.copy2(src, dst)
                 copied_eval[dst_name] = str(dst)
 
         summary["frames"].append(
@@ -398,23 +508,56 @@ def maybe_open_viewer(viewer: str, colored_ply: Path) -> None:
         print(f"Viewer not opened. Open this colored point cloud manually: {colored_ply}")
         return
 
+    display_environment = {}
+    visualizer = None
     try:
+        # Open3D's legacy GLEW viewer needs X11/XWayland on Linux desktops.
+        if sys.platform.startswith("linux") and os.environ.get("DISPLAY"):
+            for name in ("XDG_SESSION_TYPE", "WAYLAND_DISPLAY"):
+                display_environment[name] = os.environ.get(name)
+            os.environ["XDG_SESSION_TYPE"] = "x11"
+            os.environ.pop("WAYLAND_DISPLAY", None)
         import open3d as o3d
 
         pcd = o3d.io.read_point_cloud(str(colored_ply))
-        o3d.visualization.draw_geometries([pcd], window_name="NIDAR synthesized intensity")
+        if not pcd.has_points():
+            raise RuntimeError(f"No points loaded from {colored_ply}")
+        visualizer = o3d.visualization.Visualizer()
+        if not visualizer.create_window(window_name="NIDAR synthesized intensity", width=1280, height=800):
+            raise RuntimeError("Open3D could not create a desktop window")
+        if not visualizer.add_geometry(pcd):
+            raise RuntimeError("Open3D could not display the point cloud")
+        visualizer.get_render_option().background_color = np.array([0.04, 0.05, 0.06])
+        visualizer.get_render_option().point_size = 2.0
+        visualizer.run()
     except Exception as exc:
+        if viewer == "open3d":
+            raise RuntimeError(
+                "Requested Open3D viewer failed. Install requirements-viewer.txt and "
+                f"check the desktop display. Saved results remain at {colored_ply}"
+            ) from exc
         print(f"Open3D viewer failed: {exc}")
         print(f"Open this colored point cloud manually: {colored_ply}")
+    finally:
+        if visualizer is not None:
+            visualizer.destroy_window()
+        for name, value in display_environment.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
 
 
 def main() -> int:
     args = parse_args()
+    validate_runtime(args)
     paths = resolve_paths(args)
+    manifest = validate_input(args, paths)
     prepare_output(paths, args.overwrite)
     config_path = write_generated_config(args, paths)
     internal_log = run_internal_pipeline(args, config_path, paths)
-    summary = collect_results(args, paths, internal_log)
+    validate_intermediate_outputs(manifest, paths)
+    summary = collect_results(args, paths, internal_log, manifest["frames"])
 
     if not args.keep_work_dir and paths["work_dir"].exists():
         shutil.rmtree(paths["work_dir"])

@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from .stn_net import STN, stn_init
+from .checkpoint import load_checkpoint
 
 
 class STNWrapper:
@@ -38,7 +39,7 @@ class STNWrapper:
         #     raise FileNotFoundError(f"找不到模型文件: {checkpoint_path}")
 
         if os.path.exists(checkpoint_path):
-            checkpoint = torch.load(checkpoint_path, map_location=self.device)
+            checkpoint = load_checkpoint(checkpoint_path)
 
             # 兼容多种checkpoint格式:
             # 1) 纯state_dict
@@ -57,11 +58,7 @@ class STNWrapper:
             else:
                 state_dict = checkpoint
 
-            missing, unexpected = self.model.load_state_dict(state_dict, strict=False)
-            if missing:
-                print(f"[STNWrapper] Warning: missing keys when loading state_dict: {missing[:5]} ... (total {len(missing)})")
-            if unexpected:
-                print(f"[STNWrapper] Warning: unexpected keys in state_dict: {unexpected[:5]} ... (total {len(unexpected)})")
+            self.model.load_state_dict(state_dict, strict=True)
 
             print(f"✓ 已加载STN模型权重: {checkpoint_path}")
         else:

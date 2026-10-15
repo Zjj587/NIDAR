@@ -11,6 +11,7 @@ from typing import Optional, Tuple
 import numpy as np
 import torch
 import torch.nn.functional as F
+from .checkpoint import load_checkpoint
 
 # 添加项目路径
 project_root = Path(__file__).parent.parent
@@ -59,7 +60,7 @@ class DeepIntrinsicWrapper:
 
         # 加载权重
         if Path(checkpoint_path).exists():
-            checkpoint = torch.load(checkpoint_path, map_location=self.device)
+            checkpoint = load_checkpoint(checkpoint_path)
 
             # 兼容不同格式
             if 'model_state_dict' in checkpoint:

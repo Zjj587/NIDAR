@@ -1,0 +1,2 @@
+# Optional LPIPS metric, disabled in the public demo by default.
+lpips
