@@ -39,8 +39,9 @@ This figure is not a validation run of the new official-data converter.*
 > A two-frame run took 27.4 seconds on a ThinkPad CPU; see the
 > [acceptance scope and limits](docs/RELEASE_ACCEPTANCE.md). Waymo and nuScenes
 > data must be obtained upstream. [Waymo](docs/DATA_ACCESS.md#waymo) and
-> [nuScenes](docs/DATA_ACCESS.md#nuscenes) conversion commands are now included;
-> fresh-download validation is pending. Simulator demos are deferred.
+> [nuScenes](docs/DATA_ACCESS.md#nuscenes) conversion commands are included.
+> Raw conversion and inference passed on Waymo's official two-frame SDK fixture;
+> real nuScenes acceptance is pending. Simulator demos are deferred.
 
 ## Quick Start
 
@@ -63,7 +64,7 @@ Choose a dataset, download it from the official provider, and prepare two frames
 
 | Dataset | Download and conversion guide |
 | --- | --- |
-| Waymo | [One Perception Frame TFRecord -> two frames](docs/DATA_ACCESS.md#waymo) |
+| Waymo | [Official two-frame TFRecord or your own segment](docs/DATA_ACCESS.md#waymo) |
 | nuScenes | [Official mini split -> two keyframes](docs/DATA_ACCESS.md#nuscenes) |
 
 Then run the complete pipeline in your NIDAR inference environment:
@@ -131,8 +132,8 @@ checkpoints are incompatible with this default.
 
 | Workflow | Current scope |
 | --- | --- |
-| Waymo-style exported-data inference | CPU two-frame acceptance passed; official-data conversion validation pending |
-| Official Waymo / nuScenes converters | Included with geometry/contract tests; fresh-download acceptance pending |
+| Waymo raw TFRecord -> inference | Official two-frame SDK fixture passed; full-segment acceptance remains separate |
+| nuScenes converter | Geometry/contract tests and SDK environment passed; real-data acceptance pending |
 | Converted nuScenes inference | Integrated with six-camera input and nuScenes remap; real-data acceptance pending |
 | Static previews and MAE/RMSE/SSIM evaluation | Included |
 | Interactive point-cloud viewing | Optional Open3D dependency |

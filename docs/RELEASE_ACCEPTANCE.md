@@ -82,10 +82,42 @@ nuScenes inference was run for this check. The Waymo regression reused the
 previous authorized export; it does not validate the new TFRecord converter.
 The GUI was not retested in this headless follow-up.
 
+## Official Waymo Raw Fixture, 2026-10-16
+
+This later check used the official SDK's `two_frame.tfrecord`, not the
+previous owner-prepared export. The [download guide](DATA_ACCESS.md#waymo)
+records the upstream commit, URL, byte count and SHA-256. The source context is
+`10485926982439064520_4980_000_5000_000`, with timestamps
+`1543251275738460` and `1543251275838479` microseconds.
+
+| Check | Result |
+| --- | --- |
+| Separate Waymo converter environment | Python 3.10, SDK 1.6.7, TensorFlow 2.13.0, NumPy 1.23.5, protobuf 3.20.3; `pip check` passed |
+| Exporter suite in that environment | 20 passed, including native SDK decoding of a serialized range image |
+| Raw conversion | Two frames, 10 rectified images, TOP first-return clouds; 3.83 s |
+| Full CPU `R + remap` demo | Passed in 29.79 s; peak process RSS 1,448,564 KiB |
+| Output point counts | 148,631 and 148,349; XYZ bitwise preserved |
+| Intensity and images | Finite [0, 1] predictions; both comparisons nonblank; first comparison and cloud preview visually inspected |
+| Evaluation MAE, frames 0 / 1 | 0.108672 / 0.109163 |
+| Evaluation RMSE, frames 0 / 1 | 0.146674 / 0.147541 |
+| Evaluation SSIM, frames 0 / 1 | 0.500093 / 0.508696 |
+
+The clean install exposed two real compatibility issues: the SDK's pinned old
+JAX wheel is now in JAX's official archive, and its protobuf parsing fails
+with protobuf 4. Both fixes are in `requirements-waymo-export.txt`. A PyPI
+mirror was used for slow downloads; the TensorFlow wheel's SHA-256 was checked
+against PyPI's official metadata. No installed SDK source was patched.
+
+The native test checks the SDK, not just mocked SDK outputs. These two raw
+frames still do not establish full-segment support, broad generalization or
+new paper results. Timings exclude downloads/installations and the GUI. The
+new nuScenes environment also passed installation, `pip check` and SDK imports,
+but real mini-split conversion/inference is not yet accepted.
+
 ## Remaining Release Work
 
-- Accept the [official extraction procedures](DATA_ACCESS.md) on recorded raw
-  Waymo and nuScenes inputs, including clean converter installs and visual QA.
+- Extend [official extraction acceptance](DATA_ACCESS.md) beyond the small
+  Waymo fixture, and complete real nuScenes conversion/inference and visual QA.
 - Finalize artifact-specific data/weight distribution notices.
 - Validate additional platforms and CUDA independently; this test covers CPU only.
 - Keep public code, model metadata and subsequent tagged releases aligned.

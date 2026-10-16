@@ -9,12 +9,13 @@ does not need your provider credentials. UE5 and Isaac Sim demos are deferred.
 | Waymo Perception Frame TFRecord | `prepare_waymo.py`, TOP LiDAR first return | STN -> IRNet R -> Waymo remap |
 | nuScenes `v1.0-mini` | `prepare_nuscenes.py`, six cameras and LIDAR_TOP | STN -> IRNet R -> nuScenes remap |
 
-**Validation boundary:** the existing two-frame Waymo export has passed CPU
-inference acceptance. The new converters have synthetic geometry and input
-contract tests, but conversion from a fresh official download and real
-nuScenes end-to-end inference have not yet passed release acceptance. These
-are runnable preparation instructions, not a claim that those pending checks
-have been completed. See [acceptance](RELEASE_ACCEPTANCE.md).
+**Validation boundary:** the official two-frame Waymo SDK TFRecord below has
+passed raw conversion and complete CPU inference. Its converter environment
+and 20 exporter tests, including native SDK/protobuf decoding, passed. This is
+a small upstream fixture, not a full-segment or generalization benchmark.
+nuScenes conversion has synthetic tests and a checked SDK environment; real
+mini-split end-to-end acceptance remains pending. See
+[acceptance](RELEASE_ACCEPTANCE.md#official-waymo-raw-fixture-2026-10-16).
 
 Set up the inference environment and public weights using the
 [quick start](../README.md#quick-start). Run each converter in its own
@@ -24,6 +25,24 @@ environment. Commands below assume the repository root as working directory.
 ## Waymo
 
 ### Download
+
+For a small raw-format smoke test, the **official Waymo SDK repository**
+provides a two-frame TFRecord. This is an upstream test fixture, not a complete
+segment or a representative benchmark. Download it directly from its provider:
+
+```bash
+mkdir -p data/waymo_official
+curl --fail --location --retry 3 \
+  https://raw.githubusercontent.com/waymo-research/waymo-open-dataset/99a4cb3ff07e2fe06c2ce73da001f850f628e45a/src/waymo_open_dataset/v2/perception/compat_v1/testdata/two_frame.tfrecord \
+  --output data/waymo_official/two_frame.tfrecord
+```
+
+Expected size: 9,773,046 bytes; SHA-256:
+`e86c801470f1a25c5b6d57e832617ef4689bfc4d2cd9eff0979ae95a02665236`.
+Use this filename in the conversion command below and set `--data-version`
+to `official-sdk-99a4cb3`. We do not rehost this file.
+
+For your own full Perception segment:
 
 1. Open the [official portal](https://waymo.com/open/download/), sign in and
    accept the applicable [terms](https://waymo.com/open/terms/).
@@ -48,15 +67,16 @@ converter or rename its extension.
 
 ### Prepare Two Frames
 
-Use a separate Python 3.10 Linux x86_64 environment. Replace the file path and
-`--data-version` with the actual download; `v1.4.3` is an example release label.
+Use a separate Python 3.10 Linux x86_64 environment. This command uses the
+official fixture downloaded above. For a full segment, replace its path and
+set `--data-version` to your actual provider release, such as `v1.4.3`.
 
 ```bash
 python3.10 -m venv .venv-waymo-export
 .venv-waymo-export/bin/python -m pip install -r requirements-waymo-export.txt
 .venv-waymo-export/bin/python tools/data_export/prepare_waymo.py \
-  --tfrecord /absolute/path/to/SEGMENT.tfrecord \
-  --data-version v1.4.3 \
+  --tfrecord ./data/waymo_official/two_frame.tfrecord \
+  --data-version official-sdk-99a4cb3 \
   --frames 0 1 \
   --output-root ./data/waymo_demo
 ```
@@ -64,7 +84,12 @@ python3.10 -m venv .venv-waymo-export
 The pinned SDK package is `waymo-open-dataset-tf-2-12-0==1.6.7`. Despite its
 package name, that release declares TensorFlow 2.13 and NumPy 1.23.5. Let its
 dependency metadata resolve the environment; do not force TensorFlow 2.12.
-This separate installation recipe still needs clean-install acceptance.
+The requirements include JAX's official archive because old `jaxlib` wheels
+are no longer on PyPI. They also pin protobuf 3.20.3: this legacy SDK's
+`ParseFromString(bytearray(...))` fails with protobuf 4's parser. These fixes
+were exercised on the raw fixture, not just an import check.
+If `venv` reports missing `ensurepip`, use a separate
+Conda Python 3.10 environment or install your OS's Python 3.10 venv support.
 
 The exporter uses the official SDK's TOP-LiDAR motion compensation, preserves
 native intensity for evaluation, rectifies camera distortion, and uses each
@@ -92,9 +117,24 @@ python inference/run_nidar_demo.py --dataset waymo \
 
 ### Download
 
-1. Open the [official download page](https://www.nuscenes.org/download), complete
-   its account/terms requirements, and select **nuScenes `v1.0-mini`**, not
-   nuImages. Download and extract the mini archive yourself.
+1. Select **nuScenes `v1.0-mini`**, not nuImages. The
+   [official tutorial](https://www.nuscenes.org/tutorials/nuscenes_tutorial.html)
+   provides the direct mini download below. For other splits, use the
+   [official download page](https://www.nuscenes.org/download) and its
+   account/terms process. Follow the provider's applicable data terms.
+   Allow at least 12 GB for the archive and extracted data:
+
+```bash
+mkdir -p data/nuscenes_official
+curl --fail --location --retry 3 --continue-at - \
+  https://www.nuscenes.org/data/v1.0-mini.tgz --output data/v1.0-mini.tgz
+gzip -t data/v1.0-mini.tgz
+tar -xzf data/v1.0-mini.tgz -C data/nuscenes_official
+```
+
+The published archive is 4,167,696,325 bytes. Do not treat a partial download
+as a complete dataset.
+
 2. Follow the [official devkit layout](https://github.com/nutonomy/nuscenes-devkit#nuscenes-setup).
    Preserve all JSON metadata and the sensor directories; do not flatten or
    rename the files. The selected dataroot should look like:
@@ -174,7 +214,7 @@ Exporters require a fresh output directory and never delete official input.
 A failed conversion leaves an incomplete manifest that the demo rejects;
 retry into a new empty directory. Conversion SDKs are unnecessary after export.
 
-Before marking either fresh-download workflow accepted, record the official
-source version/identifiers, converter environment, complete inference result
-and visual inspection. Existing research figures and synthetic tests alone
-do not satisfy that gate.
+Acceptance records must identify the official source, converter environment,
+complete inference result and visual inspection. The Waymo fixture record is
+available; full-segment and nuScenes mini acceptance remain separate gates.
+Existing research figures and synthetic tests alone do not satisfy them.

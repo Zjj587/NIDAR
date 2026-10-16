@@ -1,4 +1,8 @@
 # Separate Python 3.10, Linux x86_64 conversion environment (not inference).
 # Despite the package name, 1.6.7 declares tensorflow==2.13 and numpy==1.23.5.
+# JAX removed old wheels from PyPI; use its official CPU wheel archive.
+--find-links https://storage.googleapis.com/jax-releases/jax_releases.html
 waymo-open-dataset-tf-2-12-0==1.6.7
+# This SDK passes bytearray to ParseFromString; protobuf 4's upb rejects it.
+protobuf==3.20.3
 opencv-python-headless==4.8.1.78

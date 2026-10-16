@@ -13,8 +13,9 @@ Checkboxes record completed work, not promised delivery dates.
   acquisition without project-hosted dataset mirrors.
 - [x] Release conversion commands, source manifests and synthetic geometry tests
   for Waymo Frame TFRecords and nuScenes keyframes.
-- [ ] Accept both converters on fresh official downloads, recording exact
-  versions, source IDs, environments and complete inference outputs.
+- [x] Accept the Waymo converter and full CPU route on the official SDK's
+  two-frame raw fixture, recording source hash and environment.
+- [ ] Extend raw acceptance to a complete Waymo segment and nuScenes mini.
 - [ ] Accept real nuScenes end-to-end inference with the new converter.
 - [x] Reproduce installation, public downloads, inference, and visualization
   on a clean machine; record environment, peak memory, and elapsed time.

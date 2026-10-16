@@ -39,8 +39,10 @@ development machine.
   entry; record results in `docs/RELEASE_ACCEPTANCE.md`.
 - [x] Publish official Waymo/nuScenes acquisition and conversion commands,
   input validation, source manifests, and geometry regression tests.
-- [ ] Validate fresh official raw-data conversion and real nuScenes inference;
-  fixture tests and the existing Waymo export do not establish these checks.
+- [x] Validate the official Waymo SDK two-frame raw TFRecord through conversion,
+  full inference, geometry preservation and nonblank visual outputs.
+- [ ] Validate a full Waymo segment and real nuScenes inference; the small
+  upstream Waymo fixture does not establish those separate checks.
 
 ## Items Requiring Owner Review Before Public Artifact Release
 

@@ -1,5 +1,6 @@
 """Synthetic contract/geometry tests, not official-dataset acceptance results."""
 import argparse
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -7,6 +8,7 @@ import sys
 import tempfile
 from types import SimpleNamespace as NS
 import unittest
+import zlib
 from unittest.mock import Mock, patch
 
 import cv2
@@ -296,6 +298,26 @@ class ExportTests(unittest.TestCase):
             result = subprocess.run([sys.executable, str(ROOT / "tools/data_export" / name), "--help"],
                                     capture_output=True, text=True, check=True)
             self.assertIn("--output-root", result.stdout)
+
+    @unittest.skipUnless(importlib.util.find_spec('waymo_open_dataset'), 'requires isolated Waymo SDK environment')
+    def test_native_waymo_sdk_decodes_compressed_protobuf(self):
+        from waymo_open_dataset import dataset_pb2
+        from waymo_open_dataset.utils import frame_utils
+        frame = dataset_pb2.Frame()
+        laser = frame.lasers.add(name=dataset_pb2.LaserName.TOP)
+        for field, cls, dims, values in [
+            ('range_image_compressed', dataset_pb2.MatrixFloat, [1, 1, 4], [1., .5, 0., 0.]),
+            ('range_image_pose_compressed', dataset_pb2.MatrixFloat, [1, 1, 6], [0.] * 6),
+            ('camera_projection_compressed', dataset_pb2.MatrixInt32, [1, 1, 6], [0] * 6),
+        ]:
+            matrix = cls()
+            matrix.shape.dims.extend(dims)
+            matrix.data.extend(values)
+            setattr(laser.ri_return1, field, zlib.compress(matrix.SerializeToString()))
+        ranges, cameras, _, poses = frame_utils.parse_range_image_and_camera_projection(frame)
+        np.testing.assert_allclose(ranges[1][0].data, [1., .5, 0., 0.])
+        self.assertEqual(list(cameras[1][0].shape.dims), [1, 1, 6])
+        self.assertEqual(list(poses.shape.dims), [1, 1, 6])
 
 
 if __name__ == "__main__":
