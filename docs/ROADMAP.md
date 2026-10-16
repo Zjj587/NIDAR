@@ -10,10 +10,12 @@ Checkboxes record completed work, not promised delivery dates.
 - [x] Pinned downloader and focused source/demo checks.
 - [x] Validate the source package with the correct full-model configuration.
 - [x] Define [data access policy](DATA_ACCESS.md): official Waymo/nuScenes
-  acquisition and separately reviewed simulator sample downloads.
-- [ ] Release and verify Waymo/nuScenes conversion instructions and adapters
-  from official data, with exact versions, file IDs, and calibration.
-- [ ] Publish verified UE5/Isaac Sim sample exports with the matching adapters.
+  acquisition without project-hosted dataset mirrors.
+- [x] Release conversion commands, source manifests and synthetic geometry tests
+  for Waymo Frame TFRecords and nuScenes keyframes.
+- [ ] Accept both converters on fresh official downloads, recording exact
+  versions, source IDs, environments and complete inference outputs.
+- [ ] Accept real nuScenes end-to-end inference with the new converter.
 - [x] Reproduce installation, public downloads, inference, and visualization
   on a clean machine; record environment, peak memory, and elapsed time.
 - [x] Confirm predictions are unchanged when evaluation-only current-frame
@@ -23,8 +25,8 @@ Checkboxes record completed work, not promised delivery dates.
 
 ## Reuse And Maintenance
 
-- [ ] Document the custom-data coordinate, image, and calibration contract
-  with a worked example and an input validation command.
+- [x] Add an input validation command for prepared exports.
+- [ ] Add a worked custom-data example beyond the official-data converters.
 - [ ] Add continuous integration for the existing CPU source/demo tests.
 - [ ] Release one simulator or additional-dataset adapter at a time, each with
   a sample, supported environment, reference outputs, and a test.
@@ -34,6 +36,7 @@ Checkboxes record completed work, not promised delivery dates.
 
 ## Presentation And Optional Hosting
 
+- [ ] Deferred: UE5/Isaac Sim sample exports, adapters and asset-rights review.
 - [x] Reuse real GT/NIDAR research media in the repository overview.
 - [ ] Add a concise prerecorded video after the reproducible demo is ready.
 - [ ] Consider a hosted interactive demo based on demand and compute needs.

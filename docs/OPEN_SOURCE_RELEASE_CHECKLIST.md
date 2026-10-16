@@ -15,7 +15,7 @@ development machine.
   paper-aligned `R+remap` route while preserving the older default behavior.
 - [x] `inference/run_nidar_demo.py` provides a single end-to-end demo command
   with compact final outputs and optional Open3D visualization.
-- [x] `docs/DEMO.md` documents the end-to-end Waymo-style demo command, output
+- [x] `docs/DEMO.md` documents the end-to-end demo command, output
   tree, and qualitative comparison images.
 - [x] `docs/MODEL_ZOO.md` documents the external checkpoint and sample-data
   artifact layout.
@@ -37,6 +37,10 @@ development machine.
 - [x] Complete real anonymous checkpoint downloads and the full CPU demo on ThinkPad.
 - [x] Verify GT independence, strict public JSON, and the actual Open3D viewer
   entry; record results in `docs/RELEASE_ACCEPTANCE.md`.
+- [x] Publish official Waymo/nuScenes acquisition and conversion commands,
+  input validation, source manifests, and geometry regression tests.
+- [ ] Validate fresh official raw-data conversion and real nuScenes inference;
+  fixture tests and the existing Waymo export do not establish these checks.
 
 ## Items Requiring Owner Review Before Public Artifact Release
 
@@ -45,7 +49,8 @@ development machine.
   Waymo Open Dataset, nuScenes, ROS, Isaac Sim, UE5, and any external baseline
   code.
 - [ ] Public checkpoint distribution policy for STN and IRNet weights.
-- [ ] Public sample data policy and expected dataset layout.
+- [x] Official-provider acquisition policy and prepared-input layout documented;
+  no Waymo/nuScenes redistribution. Simulator demos deferred.
 - [x] arXiv citation and project-page link aligned with the project website.
 - [ ] Replace local owner-review paths in `docs/MODEL_ZOO.md` with public
   artifact links before broad external announcement, or keep them clearly
@@ -86,6 +91,7 @@ python3 inference/run_nidar_demo.py --help
 
 python3 -m unittest discover -s tests -p 'test_public_release.py' -v
 python3 -m unittest discover -s tests -p 'test_checkpoint.py' -v
+python3 -m unittest discover -s tests -p 'test_data_export.py' -v
 
 python tools/release/make_source_package.py --out-dir /path/outside/repo/nidar_source_check
 ```

@@ -2,7 +2,7 @@
 """End-to-end NIDAR demo entry point.
 
 This wrapper hides the internal multi-stage pipeline behind one command. It
-expects a Waymo-style raw export with `images/` and `pointclouds/`, writes final
+expects a prepared Waymo or nuScenes export with `images/` and `pointclouds/`, writes final
 results into a compact `results/` directory, and can open the synthesized
 intensity point cloud in an Open3D viewer.
 """
@@ -52,8 +52,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input-root",
         required=True,
-        help="Waymo-style raw directory containing images/ and pointclouds/.",
+        help="Prepared directory containing images/ and pointclouds/; see docs/DATA_ACCESS.md.",
     )
+    parser.add_argument("--dataset", choices=["auto", "waymo", "nuscenes"], default="auto",
+                        help="Read dataset from input_manifest.json; legacy exports default to Waymo.")
+    parser.add_argument("--check-input", action="store_true",
+                        help="Validate inputs and artifact paths without inference or output writes.")
     parser.add_argument(
         "--weights-root",
         required=True,
@@ -127,7 +131,7 @@ def validate_runtime(args: argparse.Namespace) -> None:
         )
 
 
-def resolve_paths(args: argparse.Namespace) -> Dict[str, Path]:
+def resolve_paths(args: argparse.Namespace) -> Dict:
     input_root = Path(args.input_root).expanduser().resolve()
     weights_root = Path(args.weights_root).expanduser().resolve()
     output_root = Path(args.output_root).expanduser().resolve()
@@ -137,11 +141,35 @@ def resolve_paths(args: argparse.Namespace) -> Dict[str, Path]:
     stn_ckpt = require_file(weights_root / "stn" / "47.pth", "STN checkpoint")
     irnet_ckpt = require_file(weights_root / "irnet" / "epoch_010.pth", "IRNet checkpoint")
 
+    dataset_type = getattr(args, "dataset", "auto")
+    input_manifest = input_root / "input_manifest.json"
+    if input_manifest.exists():
+        metadata = json.loads(input_manifest.read_text(encoding="utf-8"))
+        if (metadata.get("format") != "nidar-camera-cloud-v1" or
+                metadata.get("export_status") != "complete" or
+                metadata.get("camera_coordinates") != "forward-left-up" or
+                metadata.get("point_coordinates") != "world"):
+            raise ValueError("Input export is incomplete or has an unsupported coordinate contract")
+        source_dataset = metadata.get("source_dataset")
+        if source_dataset not in ("waymo", "nuscenes"):
+            raise ValueError("Unsupported source_dataset in input manifest")
+        if source_dataset == "waymo" and metadata.get("evaluation_calibration") != "per-frame-lidar-reference":
+            raise ValueError("Waymo manifest requires per-frame evaluation calibration")
+        if dataset_type not in ("auto", source_dataset):
+            raise ValueError("--dataset does not match the input manifest")
+        dataset_type = source_dataset
+    elif dataset_type == "nuscenes":
+        raise ValueError("nuScenes requires input_manifest.json from tools/data_export/prepare_nuscenes.py")
+    elif dataset_type == "auto":
+        dataset_type = "waymo"
+
     if args.quantile_model:
         quantile_model = require_file(Path(args.quantile_model).expanduser().resolve(), "quantile model")
     else:
-        weights_quantile = weights_root / "quantile" / "wintensity_mapping_quantile_model.pkl"
-        quantile_model = weights_quantile if weights_quantile.exists() else DEFAULT_BUNDLED_QUANTILE
+        quantile_name = f"{'n' if dataset_type == 'nuscenes' else 'w'}intensity_mapping_quantile_model.pkl"
+        weights_quantile = weights_root / "quantile" / quantile_name
+        quantile_model = (weights_quantile if weights_quantile.exists()
+                          else DEFAULT_BUNDLED_QUANTILE.parent / quantile_name)
         quantile_model = require_file(quantile_model, "quantile model")
 
     # --overwrite must never remove an input or checkpoint directory.
@@ -161,6 +189,7 @@ def resolve_paths(args: argparse.Namespace) -> Dict[str, Path]:
         "output_root": output_root,
         "work_dir": output_root / "_nidar_work",
         "results_dir": output_root / "results",
+        "dataset_type": dataset_type,
     }
 
 
@@ -178,14 +207,36 @@ def validate_input(args: argparse.Namespace, paths: Dict[str, Path]) -> Dict:
         )
 
     manifest = {"frames": [], "images": []}
+    source_manifest = paths["input_root"] / "input_manifest.json"
+    exported_frames = None
+    exported_records = {}
+    if source_manifest.is_file():
+        metadata = json.loads(source_manifest.read_text(encoding="utf-8"))
+        exported_frames = [frame["frame"] for frame in metadata["frames"]]
+        if len(set(exported_frames)) != len(exported_frames) or metadata.get("frame_count") != len(exported_frames):
+            raise ValueError("Invalid frame list/count in input manifest")
+        exported_records = {record["frame"]: record for record in metadata["frames"]}
     for frame_id in dataset.frames:
         frame = f"frame_{frame_id:06d}"
+        if exported_frames is not None and frame not in exported_frames:
+            raise ValueError(f"Frame not recorded in input manifest: {frame}")
         info = dataset.get_frame_info(frame_id)
         if not info["cameras"]:
             raise ValueError(f"No camera calibrations found for {frame}")
+        if frame in exported_records:
+            recorded_cameras = exported_records[frame]["cameras"]
+            camera_ids = [camera["camera_id"] if isinstance(camera, dict) else camera
+                          for camera in recorded_cameras]
+            if len(set(camera_ids)) != len(camera_ids) or sorted(camera_ids) != sorted(info["cameras"]):
+                raise ValueError(f"Camera set does not match input manifest: {frame}")
         if info["pointcloud_path"] is None:
             raise FileNotFoundError(f"Input point cloud missing for {frame}")
         dataset.load_lidar_calibration(frame_id)
+        if exported_frames is not None and paths["dataset_type"] == "waymo":
+            require_file(paths["pointcloud_dir"] / f"{frame}_eval_calib.json", "frame evaluation calibration")
+        points = dataset.load_pointcloud(frame_id)
+        if points.ndim != 2 or points.shape[1] != 4 or not len(points) or not np.isfinite(points).all():
+            raise ValueError(f"Invalid nonempty finite point cloud required: {frame}")
 
         for image_path in paths["images_dir"].glob(f"{frame}_cam*.jpg"):
             require_file(image_path.with_suffix(".json"), "camera calibration")
@@ -234,6 +285,7 @@ def write_generated_config(args: argparse.Namespace, paths: Dict[str, Path]) -> 
         cfg = yaml.safe_load(f)
 
     cfg["dataset"]["image_dir"] = str(paths["images_dir"])
+    cfg["dataset"]["type"] = paths["dataset_type"]
     cfg["dataset"]["pointcloud_dir"] = str(paths["pointcloud_dir"])
     cfg["dataset"]["calib_dir"] = str(paths["images_dir"])
     cfg["dataset"]["work_dir"] = str(paths["work_dir"])
@@ -264,7 +316,12 @@ def write_generated_config(args: argparse.Namespace, paths: Dict[str, Path]) -> 
     cfg["evaluation"]["compute_lpips"] = False
     cfg["evaluation"]["device"] = "cpu"
     cfg["evaluation"]["skip_existing"] = False
-    cfg["evaluation"]["waymo_calib_json"] = str(INFERENCE_ROOT / "configs" / "waymo_lidar_calib.json")
+    cfg["evaluation"]["waymo_calib_json"] = (
+        str(INFERENCE_ROOT / "configs" / "waymo_lidar_calib.json")
+        if paths["dataset_type"] == "waymo" else None)
+    if paths["dataset_type"] == "waymo" and (paths["input_root"] / "input_manifest.json").is_file():
+        cfg["evaluation"]["waymo_calib_json"] = None
+        cfg["evaluation"]["waymo_calib_dir"] = str(paths["pointcloud_dir"])
 
     config_path = paths["output_root"] / "nidar_demo_generated_config.yaml"
     with open(config_path, "w", encoding="utf-8") as f:
@@ -406,6 +463,7 @@ def collect_results(args: argparse.Namespace, paths: Dict[str, Path], internal_l
         )
 
     summary = {
+        "dataset_type": paths["dataset_type"],
         "input_root": str(paths["input_root"]),
         "output_root": str(paths["output_root"]),
         "internal_log": str(internal_log),
@@ -417,6 +475,11 @@ def collect_results(args: argparse.Namespace, paths: Dict[str, Path], internal_l
         "frame_count": len(expected_frames),
         "frames": [],
     }
+
+    source_manifest = paths["input_root"] / "input_manifest.json"
+    if source_manifest.is_file():
+        shutil.copy2(source_manifest, results_dir / "input_manifest.json")
+        summary["input_manifest"] = str(results_dir / "input_manifest.json")
 
     eval_summary = eval_dir / "evaluation_summary.json"
     if eval_summary.exists():
@@ -553,6 +616,11 @@ def main() -> int:
     validate_runtime(args)
     paths = resolve_paths(args)
     manifest = validate_input(args, paths)
+    if args.check_input:
+        print(f"Input check passed: {paths['dataset_type']}, "
+              f"{len(manifest['frames'])} frames, {len(manifest['images'])} camera images.")
+        print(f"Quantile model: {paths['quantile_model']}")
+        return 0
     prepare_output(paths, args.overwrite)
     config_path = write_generated_config(args, paths)
     internal_log = run_internal_pipeline(args, config_path, paths)

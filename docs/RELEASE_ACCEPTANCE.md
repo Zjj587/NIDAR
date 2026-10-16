@@ -58,9 +58,34 @@ These are the current evaluator's outputs on two adjacent demo frames, not
 evidence that this sample is representative or that NIDAR outperforms another
 method. LPIPS was not computed. Inspect both full and masked comparisons.
 
+## Official-Data Integration Check, 2026-10-16
+
+The new Waymo TFRecord and nuScenes keyframe converters share an explicit
+camera/cloud contract, source manifests, and dataset-specific remap selection.
+This follow-up used the same ThinkPad CPU inference environment:
+
+| Check | Result |
+| --- | --- |
+| Complete supported-environment suite | 68 tests passed, none skipped |
+| New exporter tests | 19 synthetic geometry/contract tests included in the suite |
+| Existing owner Waymo sample input check | Two frames and 10 camera images passed |
+| Existing two-frame Waymo full inference | Passed in 27.48 s; peak process RSS 1,410,900 KiB |
+| Compatibility with previous public-source run | Both prediction arrays bitwise equal |
+| Output checks | Finite [0, 1] intensities, complete point clouds and nonblank comparison images |
+
+Synthetic tests cover nuScenes camera optical axes and asynchronous poses,
+Waymo SDK-result handling and per-frame evaluation calibration, incomplete
+exports, frame/camera manifests, and source-package entry points. They do not
+exercise the real dataset SDKs on official raw input. No fresh official data
+was downloaded, no converter environment was clean-installed, and no real
+nuScenes inference was run for this check. The Waymo regression reused the
+previous authorized export; it does not validate the new TFRecord converter.
+The GUI was not retested in this headless follow-up.
+
 ## Remaining Release Work
 
-- Provide a permitted public sample download or a complete extraction procedure.
+- Accept the [official extraction procedures](DATA_ACCESS.md) on recorded raw
+  Waymo and nuScenes inputs, including clean converter installs and visual QA.
 - Finalize artifact-specific data/weight distribution notices.
 - Validate additional platforms and CUDA independently; this test covers CPU only.
 - Keep public code, model metadata and subsequent tagged releases aligned.

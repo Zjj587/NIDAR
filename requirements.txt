@@ -1,4 +1,4 @@
-# Exported Waymo-style inference, static previews, and default evaluation.
+# Prepared Waymo/nuScenes inference, static previews, and default evaluation.
 # Install a PyTorch build suitable for your GPU before installing this file.
 numpy>=1.23
 opencv-python>=4.6

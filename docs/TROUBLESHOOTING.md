@@ -25,7 +25,18 @@ and LiDAR calibration files. Use `--frame-count 1` for one complete frame.
 Waymo and nuScenes inputs are obtained from their official providers; project
 mirrors are not provided. An example directory name does not mean that data has
 been downloaded or converted. See [data access](DATA_ACCESS.md) and the
-[required Waymo export layout](MODEL_ZOO.md#expected-demo-data-layout).
+[required export layout](MODEL_ZOO.md#expected-demo-data-layout). Run the
+appropriate converter first, then add `--check-input` to your demo command.
+An incomplete export manifest means conversion did not finish; retry into a
+fresh directory, rather than editing its status by hand.
+
+## Dataset Conversion Dependencies Conflict
+
+Use separate conversion and inference environments as shown in
+[data access](DATA_ACCESS.md). The Waymo SDK pins TensorFlow and NumPy versions;
+installing it into the inference environment can replace working packages.
+nuScenes requires the metadata directory and sensor files under the same
+dataroot. Its six-camera coordinate conversion is not a filename rename.
 
 ## A Package Or Display Is Missing
 
@@ -64,7 +75,7 @@ The full range-image metric includes points outside valid image coverage.
 Report the masked comparison with its coverage, alongside the full view.
 Quantile remapping changes predicted values; it does not fill missing coverage.
 
-The calibration targets the Waymo domain. Different sensors, exposure,
+The manifest selects the Waymo or nuScenes calibration. Different sensors, exposure,
 materials, and ranges can shift intensity distributions. Inspect raw and
 remapped outputs and range/visibility groups when diagnosing a new domain.
 

@@ -1,10 +1,10 @@
-# End-To-End Waymo-Style Demo
+# End-To-End Demo
 
-The public demo is intended to feel like one operation: provide a Waymo-style
-raw export, run one command, and inspect a synthesized-intensity point cloud.
+Prepare Waymo or nuScenes input with the [official-data guide](DATA_ACCESS.md),
+run one command, and inspect a synthesized-intensity point cloud.
 
 ```text
-Waymo-style raw input
+Prepared camera images, point cloud and calibration
   -> NIDAR end-to-end synthesis
   -> colored intensity point cloud and optional viewer
 ```
@@ -41,19 +41,20 @@ python tools/download_weights.py --weights-root "$WEIGHTS_ROOT"
 This pins the published model revision, verifies file sizes and SHA-256, and
 creates the expected STN/IRNet/quantile subdirectories without a Hub login.
 It does not download data. Waymo and nuScenes inputs must be obtained from
-their official providers; see [data access and preparation status](DATA_ACCESS.md).
-Raw-data conversion has not yet been validated in the public release. Planned
-downloadable demos will use separately reviewed UE5 and Isaac Sim exports.
+their official providers; see [download and conversion commands](DATA_ACCESS.md).
+Fresh official-data conversion and real nuScenes inference still need release
+acceptance. UE5 and Isaac Sim demos are deferred.
 
 Large downloads print progress periodically. A file is ready only after the
 downloader reports that its size and SHA-256 have been verified. An interrupted
 download is removed and retried from the start on the next invocation; already
 verified files are reused.
 
-An existing authorized Waymo-style export should be placed under:
+For example, the new converters produce:
 
 ```text
-$DATA_ROOT/waymo/demo_scene/raw/
+$DATA_ROOT/waymo_demo/
+  input_manifest.json
   images/
   pointclouds/
 ```
@@ -63,7 +64,7 @@ $DATA_ROOT/waymo/demo_scene/raw/
 ```bash
 cd "$PROJECT_ROOT"
 python inference/run_nidar_demo.py \
-  --input-root "$DATA_ROOT/waymo/demo_scene/raw" \
+  --input-root "$DATA_ROOT/waymo_demo" \
   --weights-root "$WEIGHTS_ROOT" \
   --output-root "$OUTPUT_ROOT/nidar_demo" \
   --viewer auto
@@ -72,6 +73,12 @@ python inference/run_nidar_demo.py \
 Use `--viewer open3d` to force an Open3D point-cloud window, or
 `--viewer none` on a headless server. The internal pipeline log is saved, but
 the user-facing output is the compact `results/` directory.
+
+For a converted nuScenes input, use `--input-root "$DATA_ROOT/nuscenes_demo"`.
+The manifest selects the dataset and remap model; `--dataset waymo` or
+`--dataset nuscenes` can assert that choice. Legacy Waymo exports without a
+manifest remain supported. Add `--check-input` for validation without inference
+or output writes; it checks artifact paths, not checkpoint hashes or loading.
 
 Install `requirements-viewer.txt` for the window. Drag to rotate the cloud,
 scroll to zoom, and close the window to finish the command. Static previews and
@@ -98,6 +105,7 @@ $OUTPUT_ROOT/nidar_demo/
   nidar_demo_generated_config.yaml
   nidar_internal_pipeline.log
   results/
+    input_manifest.json  # when provided by the converter
     summary.json
     evaluation_summary.json
     frame_000000/

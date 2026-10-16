@@ -33,13 +33,14 @@ visual comparisons.
 </table>
 
 *Existing nuScenes research example from the [project page](https://nidar-web.github.io/#nuscenes-comparisons).
-The initial portable demo targets Waymo-style exports; this figure is not a new release-validation run.*
+This figure is not a validation run of the new official-data converter.*
 
 > **Release preview:** public weights and a CPU-tested inference route are available.
 > A two-frame run took 27.4 seconds on a ThinkPad CPU; see the
 > [acceptance scope and limits](docs/RELEASE_ACCEPTANCE.md). Waymo and nuScenes
-> data must be obtained upstream; conversion validation is pending. Downloadable
-> UE5 and Isaac Sim demos are in preparation. See [data access](docs/DATA_ACCESS.md).
+> data must be obtained upstream. [Waymo](docs/DATA_ACCESS.md#waymo) and
+> [nuScenes](docs/DATA_ACCESS.md#nuscenes) conversion commands are now included;
+> fresh-download validation is pending. Simulator demos are deferred.
 
 ## Quick Start
 
@@ -58,12 +59,18 @@ python tools/download_weights.py --weights-root ./weights
 The downloader uses a pinned Hugging Face revision and checks file sizes and
 SHA-256. No login is needed. Add `--check-only` to verify existing files.
 
-Prepare a raw export using the [input layout](docs/MODEL_ZOO.md#expected-demo-data-layout),
-then run the complete pipeline:
+Choose a dataset, download it from the official provider, and prepare two frames:
+
+| Dataset | Download and conversion guide |
+| --- | --- |
+| Waymo | [One Perception Frame TFRecord -> two frames](docs/DATA_ACCESS.md#waymo) |
+| nuScenes | [Official mini split -> two keyframes](docs/DATA_ACCESS.md#nuscenes) |
+
+Then run the complete pipeline in your NIDAR inference environment:
 
 ```bash
 python inference/run_nidar_demo.py \
-  --input-root /path/to/exported_scene/raw \
+  --input-root ./data/waymo_demo \
   --weights-root ./weights \
   --output-root ./outputs/demo \
   --viewer auto
@@ -71,8 +78,10 @@ python inference/run_nidar_demo.py \
 
 The default processes two frames. Use `--frame-count 1` for a one-frame input,
 `--device cpu` for CPU inference, or `--viewer none` on a headless machine.
-This command requires a prepared Waymo-style export. We do not redistribute
-Waymo or nuScenes data; see [official acquisition and preparation status](docs/DATA_ACCESS.md).
+For nuScenes, use `--input-root ./data/nuscenes_demo` and a fresh output directory.
+The input manifest selects the dataset and its remap calibration automatically.
+Add `--check-input` to validate inputs before inference. No author-hosted sample
+is needed; we do not redistribute Waymo or nuScenes data.
 
 For the interactive Open3D window, also run `pip install -r requirements-viewer.txt`.
 Static PNG previews do not need Open3D. See the [demo guide](docs/DEMO.md).
@@ -111,6 +120,7 @@ I_hat is not the final signal in this route.
 | STN | `weights/stn/47.pth` | [Hugging Face](https://huggingface.co/zhangjunjie587/NIDAR) |
 | IRNet, U-Net + DeepLab | `weights/irnet/epoch_010.pth` | [Hugging Face](https://huggingface.co/zhangjunjie587/NIDAR) |
 | Waymo quantile calibration | `weights/quantile/wintensity_mapping_quantile_model.pkl` | Bundled and copied by the downloader |
+| nuScenes quantile calibration | `inference/quantile_model/nintensity_mapping_quantile_model.pkl` | Bundled; selected automatically for nuScenes |
 
 The selected STN has local training provenance based on cs-stereo and is
 frozen for inference. Exact identities, provenance, and owner backup locations
@@ -122,9 +132,10 @@ checkpoints are incompatible with this default.
 | Workflow | Current scope |
 | --- | --- |
 | Waymo-style exported-data inference | CPU two-frame acceptance passed; official-data conversion validation pending |
+| Official Waymo / nuScenes converters | Included with geometry/contract tests; fresh-download acceptance pending |
+| Converted nuScenes inference | Integrated with six-camera input and nuScenes remap; real-data acceptance pending |
 | Static previews and MAE/RMSE/SSIM evaluation | Included |
 | Interactive point-cloud viewing | Optional Open3D dependency |
-| nuScenes, Isaac Sim, and UE5 | Research results on the project page; adapters not included here |
 | Training and downstream experiment harnesses | Planned follow-up releases |
 
 See the [roadmap](docs/ROADMAP.md). A published research result and a tested
@@ -134,8 +145,8 @@ public integration are listed separately.
 
 NIDAR estimates an intensity-like signal; it does not recover sensor-independent
 absolute returned power or generate XYZ from RGB. Range, visibility, exposure,
-and sensor domain affect the result. Quantile calibration is Waymo-domain
-specific. Intrinsic outputs may lose detail or vary between adjacent frames.
+and sensor domain affect the result. Quantile calibrations are dataset-specific,
+not sensor-independent. Intrinsic outputs may lose detail or vary between adjacent frames.
 
 ## Contributing And Support
 

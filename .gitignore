@@ -17,6 +17,7 @@ dist/
 
 # Local environments
 .venv/
+.venv-*/
 venv/
 env/
 
@@ -28,6 +29,7 @@ env/
 /runs/
 /logs/
 /checkpoints/
+/weights/
 *.bag
 *.pcd
 *.ply

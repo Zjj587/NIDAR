@@ -1,0 +1,4 @@
+# Separate Python 3.10 conversion environment (not inference).
+nuscenes-devkit==1.2.0
+numpy==1.26.4
+opencv-python-headless==4.11.0.86

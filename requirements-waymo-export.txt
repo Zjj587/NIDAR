@@ -1,0 +1,4 @@
+# Separate Python 3.10, Linux x86_64 conversion environment (not inference).
+# Despite the package name, 1.6.7 declares tensorflow==2.13 and numpy==1.23.5.
+waymo-open-dataset-tf-2-12-0==1.6.7
+opencv-python-headless==4.8.1.78

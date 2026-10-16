@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Create a lightweight NIDAR source-release folder.
 
-By default this creates the public Waymo inference package, not the full
-development tree. Training, ROS, benchmark, and additional dataset routes still
+By default this creates the public inference and data-conversion package, not
+the full development tree. Training, ROS, benchmark, and additional routes still
 need separate path and license cleanup before public packaging.
 """
 
@@ -62,6 +62,8 @@ PUBLIC_WAYMO_INCLUDE = (
     "constraints-cpu-tested.txt",
     "requirements-viewer.txt",
     "requirements-eval.txt",
+    "requirements-waymo-export.txt",
+    "requirements-nuscenes-export.txt",
     "docs/DEMO.md",
     "docs/DATA_ACCESS.md",
     "docs/MODEL_ZOO.md",
@@ -75,6 +77,10 @@ PUBLIC_WAYMO_INCLUDE = (
     "tests/test_public_release.py",
     "tests/test_checkpoint.py",
     "tests/test_download_weights.py",
+    "tests/test_data_export.py",
+    "tools/data_export/common.py",
+    "tools/data_export/prepare_waymo.py",
+    "tools/data_export/prepare_nuscenes.py",
     "tools/download_weights.py",
     "tools/release/make_source_package.py",
     "inference/examples.py",

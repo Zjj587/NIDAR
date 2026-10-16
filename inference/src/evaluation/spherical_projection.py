@@ -179,7 +179,9 @@ def project_to_range_image_waymo(
 
     beam_inclinations = beam_inclinations[::-1]  # 从上到下
     H = len(beam_inclinations)
-    W = 2650  # Waymo默认宽度
+    W = int(calib.get('range_image_width', 2650))
+    if W <= 0:
+        raise ValueError('range_image_width must be positive')
 
     # 读取外参矩阵 (lidar -> vehicle)
     extrinsic = np.reshape(np.array(calib['extrinsic_transform']), [4, 4])

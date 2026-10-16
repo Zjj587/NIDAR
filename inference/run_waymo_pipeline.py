@@ -17,7 +17,7 @@ from src.stages.stage1_rgb_to_pseudo_nir import process_stage1
 from src.stages.stage2_pseudo_nir_to_reflectance import process_stage2
 from src.stages.stage2_deep_intrinsic import run_stage2_deep
 from src.stages.stage3_reflectance_to_pointcloud import process_stage3
-from src.stages.stage3_5_remap_intensity import process_stage3_5_waymo
+from src.stages.stage3_5_remap_intensity import process_stage3_5
 from src.stages.stage4_evaluate import process_stage4
 
 
@@ -194,7 +194,7 @@ def main():
             logger.info(f"Stage 3 完成: 处理了 {count} 个点云\n")
 
         if 3.5 in stages_to_run:
-            count = process_stage3_5_waymo(config, logger)
+            count = process_stage3_5(config, logger, dataset_type=config['dataset'].get('type', 'waymo'))
             results['stage3_5'] = count
             logger.info(f"Stage 3.5 完成: 重映射了 {count} 个点云\n")
 

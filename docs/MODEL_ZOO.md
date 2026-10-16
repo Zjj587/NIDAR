@@ -9,9 +9,9 @@ checkpoints and datasets are not stored in git.
 | --- | --- | --- |
 | STN pseudo-NIR checkpoint | `$WEIGHTS_ROOT/stn/47.pth` | [47.pth](https://huggingface.co/zhangjunjie587/NIDAR/resolve/1390055c2c564d3276f29cc513b3ef3cdc355e40/47.pth) |
 | IRNet U-Net + DeepLab checkpoint | `$WEIGHTS_ROOT/irnet/epoch_010.pth` | [epoch_010.pth](https://huggingface.co/zhangjunjie587/NIDAR/resolve/1390055c2c564d3276f29cc513b3ef3cdc355e40/epoch_010.pth) |
-| Quantile remap model | `$WEIGHTS_ROOT/quantile/wintensity_mapping_quantile_model.pkl` | Included in `inference/quantile_model/` and may also be copied under `$WEIGHTS_ROOT/quantile/` |
-| Waymo / nuScenes inputs | Obtain from the official provider | [Acquisition and conversion status](DATA_ACCESS.md); no project-hosted data copies |
-| UE5 / Isaac Sim demo exports | Layout to be finalized with the adapters | In preparation; no public download yet |
+| Waymo remap model | `$WEIGHTS_ROOT/quantile/wintensity_mapping_quantile_model.pkl` | Bundled and copied by the downloader |
+| nuScenes remap model | `inference/quantile_model/nintensity_mapping_quantile_model.pkl` | Bundled; automatically selected for converted nuScenes input |
+| Waymo / nuScenes inputs | Obtain from the official provider | [Download and conversion commands](DATA_ACCESS.md); no project-hosted data copies |
 
 The owner published the checkpoints at
 [zhangjunjie587/NIDAR](https://huggingface.co/zhangjunjie587/NIDAR). On 2026-10-14,
@@ -173,6 +173,14 @@ $DATA_ROOT/
           frame_000001_lidar1.json
 ```
 
-The point cloud arrays must contain at least `x, y, z, intensity`. The camera
-JSON files provide `intrinsic`, `extrinsic`, `width`, and `height`. The lidar
-JSON files provide the lidar extrinsic and, when available, `ego2world`.
+The legacy layout above remains supported. New converters write `images/`,
+`pointclouds/` and `input_manifest.json` directly under their `--output-root`;
+nuScenes uses six cameras. Point-cloud NPZ files contain an Nx4 `points` array:
+world XYZ and evaluation-only intensity. Camera JSON contains `[fx, fy, cx, cy]`,
+`width`, `height`, and a camera-to-reference 4x4 `extrinsic`. Camera axes are
+forward/left/up, not optical right/down/forward.
+
+In the new exports, the reference is LIDAR_TOP. The legacy LiDAR JSON key
+`ego2world` therefore stores the LiDAR-to-world transform, and its `extrinsic`
+is identity. The manifest records this contract. Use the converters rather
+than mixing these conventions with the native dataset coordinates.

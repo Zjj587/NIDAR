@@ -66,6 +66,7 @@ def process_stage4(config: Dict, logger=None, use_remapped: bool = False):
     # 评估参数
     dataset_type = dataset_cfg.get('type', 'waymo').lower()
     waymo_calib_json = eval_cfg.get('waymo_calib_json')
+    waymo_calib_dir = eval_cfg.get('waymo_calib_dir')
     skip_existing = eval_cfg.get('skip_existing', True)
     remove_invalid_columns = eval_cfg.get('remove_invalid_columns', None)
 
@@ -171,6 +172,12 @@ def process_stage4(config: Dict, logger=None, use_remapped: bool = False):
                 do_remove = (dataset_type == 'waymo')
             else:
                 do_remove = remove_invalid_columns
+
+            if dataset_type == 'waymo' and waymo_calib_dir:
+                frame_calib = Path(waymo_calib_dir) / f"frame_{frame_id}_eval_calib.json"
+                if not frame_calib.is_file():
+                    raise FileNotFoundError(f"Missing frame evaluation calibration: {frame_calib}")
+                evaluator.waymo_calib_json = str(frame_calib)
 
             # 评估（传入ego2world用于坐标变换）
             metrics = evaluator.evaluate(

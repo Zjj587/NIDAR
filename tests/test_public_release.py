@@ -86,7 +86,11 @@ class PublicReleaseTests(unittest.TestCase):
                      "requirements-eval.txt", "tests/test_checkpoint.py",
                      "constraints-cpu-tested.txt",
                      "docs/RELEASE_ACCEPTANCE.md",
-                     "tools/download_weights.py", "tests/test_download_weights.py"]:
+                     "tools/download_weights.py", "tests/test_download_weights.py",
+                     "requirements-waymo-export.txt", "requirements-nuscenes-export.txt",
+                     "tools/data_export/common.py", "tools/data_export/prepare_waymo.py",
+                     "tools/data_export/prepare_nuscenes.py", "tests/test_data_export.py",
+                     "inference/quantile_model/nintensity_mapping_quantile_model.pkl"]:
             self.assertTrue(package.should_copy(Path(name), False), name)
             self.assertTrue((ROOT / name).is_file(), name)
         for name in [".git/config", "weights/stn/47.pth", "outputs/result.npy", "logs/COMMAND_LOG.md"]:
@@ -105,6 +109,10 @@ class PublicReleaseTests(unittest.TestCase):
         result = subprocess.run([sys.executable, str(destination / "tools/download_weights.py"), "--help"],
                                 check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         self.assertIn("--check-only", result.stdout)
+        for name in ["prepare_waymo.py", "prepare_nuscenes.py"]:
+            result = subprocess.run([sys.executable, str(destination / "tools/data_export" / name), "--help"],
+                                    check=True, capture_output=True, text=True)
+            self.assertIn("--output-root", result.stdout)
 
     def test_invalid_integer_arguments(self):
         for flag, value in [("--frame-count", "0"), ("--step", "0"),
