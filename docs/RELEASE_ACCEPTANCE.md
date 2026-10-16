@@ -1,8 +1,9 @@
 # CPU Release Acceptance
 
-Measured on 2026-10-15 using the published checkpoints and the accompanying
-source package. This is an engineering smoke test, not a new generalization
-benchmark or a reproduction of all paper experiments.
+Checks recorded from 2026-10-15 through 2026-10-17 using the published
+checkpoints and matching source. The initial owner-export check is followed
+by dated official-raw-data checks below. These are engineering smoke tests,
+not new generalization benchmarks or a reproduction of all paper experiments.
 
 ## Environment And Inputs
 
@@ -11,8 +12,9 @@ benchmark or a reproduction of all paper experiments.
 - Four threads for OpenMP, MKL, and OpenBLAS. See `constraints-cpu-tested.txt`.
 - Two exported Waymo frames, `scene_ws4/frame_000000` and `frame_000001`:
   10 RGB images, 10 camera JSONs, two point clouds, and two LiDAR JSONs.
-- Portable raw input: 24 regular files, 5,690,362 bytes. Public sample access
-  is still pending; these export labels alone are not an extraction recipe.
+- Portable raw input: 24 regular files, 5,690,362 bytes. These owner-prepared
+  exports are not distributed; use the [official-data guide](DATA_ACCESS.md)
+  for reproducible inputs. These export labels alone are not an extraction recipe.
 - Both full checkpoints were downloaded anonymously from pinned Hugging Face
   revision `1390055c2c564d3276f29cc513b3ef3cdc355e40`, with exact SHA256 checks.
 
@@ -110,14 +112,60 @@ against PyPI's official metadata. No installed SDK source was patched.
 
 The native test checks the SDK, not just mocked SDK outputs. These two raw
 frames still do not establish full-segment support, broad generalization or
-new paper results. Timings exclude downloads/installations and the GUI. The
-new nuScenes environment also passed installation, `pip check` and SDK imports,
-but real mini-split conversion/inference is not yet accepted.
+new paper results. Timings exclude downloads/installations and the GUI.
+
+## Official nuScenes Mini Two-Frame Check, 2026-10-16
+
+The [official tutorial's mini archive](https://www.nuscenes.org/data/v1.0-mini.tgz)
+was downloaded directly from its provider, then converted with the released
+`prepare_nuscenes.py`. The archive's 4,167,696,325 bytes, multipart ETag and
+gzip integrity passed validation. Its measured SHA-256 is
+`943037abbb3b26b3070dc76504a43eb440503b00baf9ac2f1538d9c03fc9298f`.
+This checksum records the retrieved bytes; it is not a provider-published hash.
+The [data guide](DATA_ACCESS.md#nuscenes) contains the reproduction commands.
+
+The tested input is `v1.0-mini`, `scene-0061`, first two keyframes, with six
+cameras and one LIDAR_TOP sweep per frame. Sample tokens are
+`ca9a282c9e77460f8360f564131a8af5` and `39586f9d59004284a7114a68825e8eec`.
+Automatic checks finished on 2026-10-16 at 22:04 China Standard Time;
+saved-image inspection completed on 2026-10-17.
+
+| Check | Result |
+| --- | --- |
+| Separate converter environment | Python 3.10, nuScenes devkit 1.2.0, NumPy 1.26.4, OpenCV 4.11.0; `pip check` and SDK imports passed |
+| Official raw conversion and input preflight | Two keyframes and 12 camera images passed |
+| Full CPU `R + remap` demo | Published STN and full U-Net + DeepLab IRNet, bundled nuScenes calibration; 28.31 s |
+| Peak process RSS from GNU time | 1,365,772 KiB, approximately 1.30 GiB |
+| Output point counts, frames 0 / 1 | 34,688 / 34,720; XYZ bitwise preserved |
+| Predicted intensity | Finite in [0, 1]; positive-point fractions 0.580431 / 0.588191 |
+| Independent native SDK projection check | Maximum discrepancy 0.087658 pixels over 12 camera/frame combinations, for tested points at camera depth greater than 1 m |
+| Saved-image inspection | Both GT/prediction comparisons, both six-camera LiDAR overlays and frame 0 point-cloud preview inspected; nonblank, no obvious wholesale projection mismatch |
+
+CPU hardware, inference environment and four-thread limit are the same as
+above. Timing includes model loading, inference, projection, remapping,
+evaluation and output generation, but excludes download, installation, raw
+conversion and separate geometry QA. RSS is process memory, not total host RAM.
+The SDK check verifies coordinate-transform compatibility, not physical
+calibration accuracy or moving-object synchronization. The GUI was not retested.
+
+| Frame | MAE | RMSE | SSIM | Valid-pixel fraction |
+| --- | ---: | ---: | ---: | ---: |
+| 000000 | 0.056886 | 0.088438 | 0.896455 | 0.276062 |
+| 000001 | 0.057005 | 0.088483 | 0.893412 | 0.280350 |
+
+These are reference outputs of the current evaluator, not accuracy acceptance
+thresholds. The comparisons are sparse and mostly low intensity. Valid-pixel
+fraction is an evaluator image statistic, not the positive-point fraction.
+Do not compare these numbers with the Waymo checks as evidence of superior
+model quality: sensor, scenes, intensity conventions and pixel coverage differ.
+No LPIPS, full-split benchmark, CUDA result, temporal-consistency result or
+robotic-task improvement is claimed. Provider data and the new output images
+are not redistributed by NIDAR.
 
 ## Remaining Release Work
 
 - Extend [official extraction acceptance](DATA_ACCESS.md) beyond the small
-  Waymo fixture, and complete real nuScenes conversion/inference and visual QA.
+  Waymo fixture and two nuScenes mini keyframes to broader coverage.
 - Finalize artifact-specific data/weight distribution notices.
 - Validate additional platforms and CUDA independently; this test covers CPU only.
 - Keep public code, model metadata and subsequent tagged releases aligned.

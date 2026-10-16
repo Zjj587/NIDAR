@@ -42,9 +42,11 @@ This pins the published model revision, verifies file sizes and SHA-256, and
 creates the expected STN/IRNet/quantile subdirectories without a Hub login.
 It does not download data. Waymo and nuScenes inputs must be obtained from
 their official providers; see [download and conversion commands](DATA_ACCESS.md).
-Official two-frame Waymo raw conversion and inference passed acceptance;
-full-segment and real nuScenes checks remain separate. UE5 and Isaac Sim demos
-are deferred.
+Official raw conversion and full CPU inference passed on the two-frame Waymo
+fixture and two nuScenes mini `scene-0061` keyframes. See the
+[acceptance record](RELEASE_ACCEPTANCE.md) for saved-image inspection and limits;
+these checks do not cover full segments/splits or a new nuScenes GUI test.
+UE5 and Isaac Sim demos are deferred.
 
 Large downloads print progress periodically. A file is ready only after the
 downloader reports that its size and SHA-256 have been verified. An interrupted

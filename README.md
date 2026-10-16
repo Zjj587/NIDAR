@@ -40,8 +40,10 @@ This figure is not a validation run of the new official-data converter.*
 > [acceptance scope and limits](docs/RELEASE_ACCEPTANCE.md). Waymo and nuScenes
 > data must be obtained upstream. [Waymo](docs/DATA_ACCESS.md#waymo) and
 > [nuScenes](docs/DATA_ACCESS.md#nuscenes) conversion commands are included.
-> Raw conversion and inference passed on Waymo's official two-frame SDK fixture;
-> real nuScenes acceptance is pending. Simulator demos are deferred.
+> Raw conversion and inference passed on Waymo's official two-frame SDK fixture
+> and two keyframes from nuScenes mini `scene-0061`. The latter took 28.31 s
+> for CPU inference; see the [nuScenes acceptance record](docs/RELEASE_ACCEPTANCE.md#official-nuscenes-mini-two-frame-check-2026-10-16).
+> These are small engineering checks, not full-split benchmarks. Simulator demos are deferred.
 
 ## Quick Start
 
@@ -133,8 +135,8 @@ checkpoints are incompatible with this default.
 | Workflow | Current scope |
 | --- | --- |
 | Waymo raw TFRecord -> inference | Official two-frame SDK fixture passed; full-segment acceptance remains separate |
-| nuScenes converter | Geometry/contract tests and SDK environment passed; real-data acceptance pending |
-| Converted nuScenes inference | Integrated with six-camera input and nuScenes remap; real-data acceptance pending |
+| nuScenes converter | Official mini `scene-0061`, two keyframes with six cameras; raw conversion and SDK projection checks passed |
+| Converted nuScenes inference | Full CPU `R + remap` route and saved-image inspection passed on those two frames; no full-split benchmark |
 | Static previews and MAE/RMSE/SSIM evaluation | Included |
 | Interactive point-cloud viewing | Optional Open3D dependency |
 | Training and downstream experiment harnesses | Planned follow-up releases |

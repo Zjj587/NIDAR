@@ -13,9 +13,11 @@ does not need your provider credentials. UE5 and Isaac Sim demos are deferred.
 passed raw conversion and complete CPU inference. Its converter environment
 and 20 exporter tests, including native SDK/protobuf decoding, passed. This is
 a small upstream fixture, not a full-segment or generalization benchmark.
-nuScenes conversion has synthetic tests and a checked SDK environment; real
-mini-split end-to-end acceptance remains pending. See
-[acceptance](RELEASE_ACCEPTANCE.md#official-waymo-raw-fixture-2026-10-16).
+Two keyframes from official nuScenes mini `scene-0061` also passed raw
+conversion, full CPU inference, SDK projection checks and saved-image
+inspection. This does not cover all mini scenes. See the
+[Waymo record](RELEASE_ACCEPTANCE.md#official-waymo-raw-fixture-2026-10-16) and
+[nuScenes record](RELEASE_ACCEPTANCE.md#official-nuscenes-mini-two-frame-check-2026-10-16).
 
 Set up the inference environment and public weights using the
 [quick start](../README.md#quick-start). Run each converter in its own
@@ -132,8 +134,12 @@ gzip -t data/v1.0-mini.tgz
 tar -xzf data/v1.0-mini.tgz -C data/nuscenes_official
 ```
 
-The published archive is 4,167,696,325 bytes. Do not treat a partial download
-as a complete dataset.
+The archive retrieved for acceptance on 2026-10-16 is 4,167,696,325 bytes;
+its measured SHA-256 is
+`943037abbb3b26b3070dc76504a43eb440503b00baf9ac2f1538d9c03fc9298f`.
+This is our download receipt, not a provider-published checksum. The provider's
+multipart ETag and gzip integrity check also matched. Do not treat a partial
+download as a complete dataset.
 
 2. Follow the [official devkit layout](https://github.com/nutonomy/nuscenes-devkit#nuscenes-setup).
    Preserve all JSON metadata and the sensor directories; do not flatten or
@@ -215,6 +221,7 @@ A failed conversion leaves an incomplete manifest that the demo rejects;
 retry into a new empty directory. Conversion SDKs are unnecessary after export.
 
 Acceptance records must identify the official source, converter environment,
-complete inference result and visual inspection. The Waymo fixture record is
-available; full-segment and nuScenes mini acceptance remain separate gates.
-Existing research figures and synthetic tests alone do not satisfy them.
+complete inference result and visual inspection. Records are available for the
+Waymo fixture and two real nuScenes mini frames. A full Waymo segment, broader
+nuScenes coverage and CUDA remain separate checks; existing research figures
+and synthetic tests alone do not satisfy them.

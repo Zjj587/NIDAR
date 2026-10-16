@@ -15,8 +15,9 @@ Checkboxes record completed work, not promised delivery dates.
   for Waymo Frame TFRecords and nuScenes keyframes.
 - [x] Accept the Waymo converter and full CPU route on the official SDK's
   two-frame raw fixture, recording source hash and environment.
-- [ ] Extend raw acceptance to a complete Waymo segment and nuScenes mini.
-- [ ] Accept real nuScenes end-to-end inference with the new converter.
+- [x] Accept real nuScenes raw conversion and end-to-end CPU inference on two
+  mini `scene-0061` keyframes, with SDK projection checks and saved-image inspection.
+- [ ] Extend raw acceptance to a complete Waymo segment and broader nuScenes coverage.
 - [x] Reproduce installation, public downloads, inference, and visualization
   on a clean machine; record environment, peak memory, and elapsed time.
 - [x] Confirm predictions are unchanged when evaluation-only current-frame

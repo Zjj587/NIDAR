@@ -41,8 +41,10 @@ development machine.
   input validation, source manifests, and geometry regression tests.
 - [x] Validate the official Waymo SDK two-frame raw TFRecord through conversion,
   full inference, geometry preservation and nonblank visual outputs.
-- [ ] Validate a full Waymo segment and real nuScenes inference; the small
-  upstream Waymo fixture does not establish those separate checks.
+- [x] Validate official nuScenes mini raw conversion and full CPU inference on
+  two `scene-0061` keyframes, including SDK projection checks and saved-image inspection.
+- [ ] Validate a full Waymo segment and broader nuScenes coverage; the two-frame
+  checks do not establish full-split quality or CUDA compatibility.
 
 ## Items Requiring Owner Review Before Public Artifact Release
 
