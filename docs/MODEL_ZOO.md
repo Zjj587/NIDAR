@@ -10,7 +10,8 @@ checkpoints and datasets are not stored in git.
 | STN pseudo-NIR checkpoint | `$WEIGHTS_ROOT/stn/47.pth` | [47.pth](https://huggingface.co/zhangjunjie587/NIDAR/resolve/1390055c2c564d3276f29cc513b3ef3cdc355e40/47.pth) |
 | IRNet U-Net + DeepLab checkpoint | `$WEIGHTS_ROOT/irnet/epoch_010.pth` | [epoch_010.pth](https://huggingface.co/zhangjunjie587/NIDAR/resolve/1390055c2c564d3276f29cc513b3ef3cdc355e40/epoch_010.pth) |
 | Quantile remap model | `$WEIGHTS_ROOT/quantile/wintensity_mapping_quantile_model.pkl` | Included in `inference/quantile_model/` and may also be copied under `$WEIGHTS_ROOT/quantile/` |
-| Waymo-style demo sample | `$DATA_ROOT/waymo/demo_scene/raw/` | Link pending |
+| Waymo / nuScenes inputs | Obtain from the official provider | [Acquisition and conversion status](DATA_ACCESS.md); no project-hosted data copies |
+| UE5 / Isaac Sim demo exports | Layout to be finalized with the adapters | In preparation; no public download yet |
 
 The owner published the checkpoints at
 [zhangjunjie587/NIDAR](https://huggingface.co/zhangjunjie587/NIDAR). On 2026-10-14,
@@ -34,8 +35,8 @@ python tools/download_weights.py --weights-root "$WEIGHTS_ROOT" --check-only
 
 This downloads the pinned revision, checks sizes and SHA-256, and copies the
 bundled Waymo quantile model. A different existing file is rejected rather than
-overwritten. The demo sample link is still pending; do not substitute a directory
-of development-machine symlinks for a portable sample archive.
+overwritten. Data is acquired separately; see [data access](DATA_ACCESS.md).
+Do not substitute development-machine symlinks for complete local input files.
 
 ## Checkpoint Identity
 
@@ -93,7 +94,8 @@ does not automatically remove third-party attribution or data obligations.
 The following paths are non-portable local evidence for the project owner. They
 are intentionally included here so Zhang Junjie can find the current artifacts
 alongside the published checkpoint links. They are not the public quick-start
-paths, and the sample location is still an unpublished candidate.
+paths. The Waymo sample location is owner-only validation evidence, not a
+candidate for public dataset redistribution.
 
 ```text
 STN checkpoint:
@@ -109,7 +111,7 @@ Verified full-model backup on zjj:
 Verified full-model backup on 2204:
   /home/ubuntu/nidar_bc_20260920/paper_irnet_recovery_20260926/user_received_EAGET1_20260926/epoch_010.pth
 
-Candidate demo sample source:
+Owner-only Waymo validation sample source:
   /home1/ZJJ/lidarrt/outputs/export/default/scene_ws4/exports/raw
 
 Historical small-head demo output (not a full-paper-model release check):

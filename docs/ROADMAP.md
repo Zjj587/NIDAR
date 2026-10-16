@@ -9,8 +9,11 @@ Checkboxes record completed work, not promised delivery dates.
 - [x] End-to-end source CLI, static previews, and optional Open3D viewer.
 - [x] Pinned downloader and focused source/demo checks.
 - [x] Validate the source package with the correct full-model configuration.
-- [ ] Provide a portable two-frame sample or a precise extraction procedure
-  for authorized dataset users, with file IDs and calibration.
+- [x] Define [data access policy](DATA_ACCESS.md): official Waymo/nuScenes
+  acquisition and separately reviewed simulator sample downloads.
+- [ ] Release and verify Waymo/nuScenes conversion instructions and adapters
+  from official data, with exact versions, file IDs, and calibration.
+- [ ] Publish verified UE5/Isaac Sim sample exports with the matching adapters.
 - [x] Reproduce installation, public downloads, inference, and visualization
   on a clean machine; record environment, peak memory, and elapsed time.
 - [x] Confirm predictions are unchanged when evaluation-only current-frame

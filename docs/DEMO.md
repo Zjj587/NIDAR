@@ -40,14 +40,17 @@ python tools/download_weights.py --weights-root "$WEIGHTS_ROOT"
 
 This pins the published model revision, verifies file sizes and SHA-256, and
 creates the expected STN/IRNet/quantile subdirectories without a Hub login.
-It does not download sample data; the portable two-frame sample is still pending.
+It does not download data. Waymo and nuScenes inputs must be obtained from
+their official providers; see [data access and preparation status](DATA_ACCESS.md).
+Raw-data conversion has not yet been validated in the public release. Planned
+downloadable demos will use separately reviewed UE5 and Isaac Sim exports.
 
 Large downloads print progress periodically. A file is ready only after the
 downloader reports that its size and SHA-256 have been verified. An interrupted
 download is removed and retried from the start on the next invocation; already
 verified files are reused.
 
-The demo sample should be placed under:
+An existing authorized Waymo-style export should be placed under:
 
 ```text
 $DATA_ROOT/waymo/demo_scene/raw/
@@ -82,9 +85,9 @@ The default IRNet checkpoint must be the U-Net + DeepLab model listed in the
 model zoo. Its R branch is projected and remapped; I_hat is not used as the
 final output.
 
-When preparing a sample archive, copy the actual image, point-cloud, and
-calibration files. A directory containing symlinks into a development machine
-is not a portable sample package.
+When preparing your local export, keep the actual image, point-cloud, and
+calibration files together. A directory containing symlinks into a development
+machine is not portable. This project does not provide a mirrored Waymo sample.
 
 ## Expected Outputs
 

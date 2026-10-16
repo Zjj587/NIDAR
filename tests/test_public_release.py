@@ -80,7 +80,7 @@ class PublicReleaseTests(unittest.TestCase):
         self.assertNotIn("/home/", demo.DEFAULT_CONFIG.read_text())
 
     def test_manifest_includes_demo_and_model_dependencies(self):
-        for name in ["LICENSE", "docs/DEMO.md", "docs/MODEL_ZOO.md",
+        for name in ["LICENSE", "docs/DEMO.md", "docs/DATA_ACCESS.md", "docs/MODEL_ZOO.md",
                      "inference/run_nidar_demo.py", "inference/src/models/network_variants.py",
                      "inference/src/models/checkpoint.py", "requirements-viewer.txt",
                      "requirements-eval.txt", "tests/test_checkpoint.py",

@@ -22,9 +22,10 @@ enabled; check the [model zoo](MODEL_ZOO.md) instead of ignoring unmatched keys.
 Each selected image needs its camera JSON and each frame needs point-cloud
 and LiDAR calibration files. Use `--frame-count 1` for one complete frame.
 
-The portable two-frame sample is being prepared. An example directory name
-does not mean that data has been downloaded. See the
-[required layout](MODEL_ZOO.md#expected-demo-data-layout).
+Waymo and nuScenes inputs are obtained from their official providers; project
+mirrors are not provided. An example directory name does not mean that data has
+been downloaded or converted. See [data access](DATA_ACCESS.md) and the
+[required Waymo export layout](MODEL_ZOO.md#expected-demo-data-layout).
 
 ## A Package Or Display Is Missing
 

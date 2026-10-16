@@ -63,6 +63,7 @@ PUBLIC_WAYMO_INCLUDE = (
     "requirements-viewer.txt",
     "requirements-eval.txt",
     "docs/DEMO.md",
+    "docs/DATA_ACCESS.md",
     "docs/MODEL_ZOO.md",
     "docs/OPEN_SOURCE_RELEASE_CHECKLIST.md",
     "docs/ROADMAP.md",
