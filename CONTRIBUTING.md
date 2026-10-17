@@ -18,6 +18,7 @@ Run these focused checks from the repository root:
 
 ```bash
 python -m unittest discover -s tests -p 'test_public_release.py' -v
+python -m unittest discover -s tests -p 'test_release_docs.py' -v
 python -m unittest discover -s tests -p 'test_download_weights.py' -v
 python -m unittest discover -s tests -p 'test_data_export.py' -v
 ```

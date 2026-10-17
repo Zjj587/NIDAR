@@ -67,14 +67,13 @@ PUBLIC_WAYMO_INCLUDE = (
     "docs/DEMO.md",
     "docs/DATA_ACCESS.md",
     "docs/MODEL_ZOO.md",
-    "docs/OPEN_SOURCE_RELEASE_CHECKLIST.md",
-    "docs/ROADMAP.md",
     "docs/RELEASE_ACCEPTANCE.md",
     "docs/TROUBLESHOOTING.md",
     "docs/assets/README.md",
     "docs/assets/nuscenes-gt.png",
     "docs/assets/nuscenes-nidar.png",
     "tests/test_public_release.py",
+    "tests/test_release_docs.py",
     "tests/test_checkpoint.py",
     "tests/test_download_weights.py",
     "tests/test_data_export.py",
@@ -130,7 +129,6 @@ V0_ALLOWED = (
 )
 
 PUBLIC_ALWAYS_INCLUDE = (
-    "docs/OPEN_SOURCE_RELEASE_CHECKLIST.md",
     "inference/configs/*_public_template.yaml",
     "inference/configs/*_lidar_calib.json",
 )

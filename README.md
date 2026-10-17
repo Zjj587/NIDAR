@@ -14,8 +14,7 @@
   <a href="#quick-start">Quick start</a> &middot;
   <a href="docs/DEMO.md">Demo guide</a> &middot;
   <a href="docs/DATA_ACCESS.md">Data access</a> &middot;
-  <a href="docs/MODEL_ZOO.md">Models</a> &middot;
-  <a href="docs/ROADMAP.md">Roadmap</a>
+  <a href="docs/MODEL_ZOO.md">Models</a>
 </p>
 
 **Add a synthesized intensity channel to an existing point cloud.** NIDAR
@@ -34,16 +33,6 @@ visual comparisons.
 
 *Existing nuScenes research example from the [project page](https://nidar-web.github.io/#nuscenes-comparisons).
 This figure is not a validation run of the new official-data converter.*
-
-> **Release preview:** public weights and a CPU-tested inference route are available.
-> A two-frame run took 27.4 seconds on a ThinkPad CPU; see the
-> [acceptance scope and limits](docs/RELEASE_ACCEPTANCE.md). Waymo and nuScenes
-> data must be obtained upstream. [Waymo](docs/DATA_ACCESS.md#waymo) and
-> [nuScenes](docs/DATA_ACCESS.md#nuscenes) conversion commands are included.
-> Raw conversion and inference passed on Waymo's official two-frame SDK fixture
-> and two keyframes from nuScenes mini `scene-0061`. The latter took 28.31 s
-> for CPU inference; see the [nuScenes acceptance record](docs/RELEASE_ACCEPTANCE.md#official-nuscenes-mini-two-frame-check-2026-10-16).
-> These are small engineering checks, not full-split benchmarks. Simulator demos are deferred.
 
 ## Quick Start
 
@@ -125,10 +114,9 @@ I_hat is not the final signal in this route.
 | Waymo quantile calibration | `weights/quantile/wintensity_mapping_quantile_model.pkl` | Bundled and copied by the downloader |
 | nuScenes quantile calibration | `inference/quantile_model/nintensity_mapping_quantile_model.pkl` | Bundled; selected automatically for nuScenes |
 
-The selected STN has local training provenance based on cs-stereo and is
-frozen for inference. Exact identities, provenance, and owner backup locations
-are in the [model zoo](docs/MODEL_ZOO.md). Historical small-head IRNet
-checkpoints are incompatible with this default.
+The STN is based on cs-stereo and is frozen for inference. Checkpoint identities,
+training metadata and attribution are in the [model zoo](docs/MODEL_ZOO.md).
+Small-head IRNet checkpoints are incompatible with this default.
 
 ## Supported Workflows
 
@@ -139,10 +127,11 @@ checkpoints are incompatible with this default.
 | Converted nuScenes inference | Full CPU `R + remap` route and saved-image inspection passed on those two frames; no full-split benchmark |
 | Static previews and MAE/RMSE/SSIM evaluation | Included |
 | Interactive point-cloud viewing | Optional Open3D dependency |
-| Training and downstream experiment harnesses | Planned follow-up releases |
+| Training and downstream experiment harnesses | Not included in this inference release |
 
-See the [roadmap](docs/ROADMAP.md). A published research result and a tested
-public integration are listed separately.
+See [tested environments and acceptance results](docs/RELEASE_ACCEPTANCE.md).
+These small CPU checks validate the demo workflow, not full-split quality or
+CUDA performance. A research result and a tested public integration are distinct.
 
 ## Limits
 

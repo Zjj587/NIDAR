@@ -48,3 +48,7 @@ env/
 # Local evidence backups
 docs/README_local_legacy_*
 V0/COMMAND_LOG.md
+
+# Internal planning documents are maintained outside the public repository.
+/docs/ROADMAP.md
+/docs/OPEN_SOURCE_RELEASE_CHECKLIST.md
