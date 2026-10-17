@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Create a lightweight NIDAR source-release folder.
 
-By default this creates the public inference and data-conversion package, not
-the full development tree. Training, ROS, benchmark, and additional routes still
-need separate path and license cleanup before public packaging.
+By default this creates the public inference, data-conversion and IRNet training
+package, not the full development tree. Historical training variants, ROS,
+benchmarks and additional routes are not included.
 """
 
 from __future__ import annotations
@@ -71,6 +71,7 @@ PUBLIC_WAYMO_INCLUDE = (
     "docs/MODEL_ZOO.md",
     "docs/RELEASE_ACCEPTANCE.md",
     "docs/TROUBLESHOOTING.md",
+    "docs/TRAINING.md",
     "docs/assets/README.md",
     "docs/assets/nuscenes-gt.png",
     "docs/assets/nuscenes-nidar.png",
@@ -79,6 +80,14 @@ PUBLIC_WAYMO_INCLUDE = (
     "tests/test_checkpoint.py",
     "tests/test_download_weights.py",
     "tests/test_data_export.py",
+    "tests/test_training.py",
+    "training/__init__.py",
+    "training/data.py",
+    "training/losses.py",
+    "training/prepare.py",
+    "training/train.py",
+    "training/config.yaml",
+    "training/sources.example.yaml",
     "tools/data_export/common.py",
     "tools/data_export/prepare_waymo.py",
     "tools/data_export/prepare_nuscenes.py",

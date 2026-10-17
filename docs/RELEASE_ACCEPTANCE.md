@@ -1,5 +1,29 @@
 # CPU Release Acceptance
 
+## IRNet Training Recipe Check, 2026-10-17
+
+The [training recipe](TRAINING.md) shares the released full U-Net + DeepLab
+implementation. This bounded check used the ThinkPad CPU environment below,
+not a GPU or a full training dataset:
+
+| Check | Result |
+| --- | --- |
+| Official nuScenes scene separation | Train: scene-0061, first two keyframes; validation: scene-0103, first keyframe |
+| Prepared samples | Camera IDs 1 and 2: four train images, two validation images |
+| STN and IRNet sizes | Frozen STN at 384 x 1248; IRNet smoke at reduced 64 x 192 |
+| Supervision | 18,860 valid projected pixels in total; no clipped intensity values |
+| Training | Released full IRNet initialization, two epochs with an intervening save/resume |
+| Objective | R*S reconstruction, reflectance/shading regularization and masked intensity supervision enabled |
+| Strict inference reload | Model-only checkpoint loaded through the public wrapper; four finite output images |
+| Qualitative output | Eight-panel validation comparison saved and visually inspected |
+| Deterministic resume regression | Separate generated-fixture test: uninterrupted vs resumed CPU model states bitwise equal |
+
+The real-data run checks training mechanics and architecture compatibility.
+It is **not evidence of convergence, improved intensity quality, reproduction
+of the paper's training, or validation of a new R+remap calibration**. No new
+weights or training samples from this check are published. Full-resolution GPU
+training remains untested. The previous inference checks follow below.
+
 Checks recorded from 2026-10-15 through 2026-10-17 using the published
 checkpoints and matching source. The initial owner-export check is followed
 by dated official-raw-data checks below. These are engineering smoke tests,

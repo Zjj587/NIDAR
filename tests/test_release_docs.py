@@ -50,6 +50,16 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertIn("Copyright (c) 2019 Tiancheng Zhi", notice)
         self.assertIn("The above copyright notice and this permission notice", notice)
 
+    def test_training_release_is_explicit_and_portable(self):
+        for name in ("training/__init__.py", "training/data.py", "training/losses.py",
+                     "training/prepare.py", "training/train.py", "training/config.yaml",
+                     "training/sources.example.yaml", "tests/test_training.py", "docs/TRAINING.md"):
+            self.assertTrue((ROOT / name).is_file())
+            self.assertTrue(package.should_copy(Path(name), False))
+            self.assertIsNone(re.search(r"/(?:media|home\d?)/", (ROOT / name).read_text()))
+        self.assertFalse(package.should_copy(Path("training/private_experiment.yaml"), False))
+        self.assertFalse(package.should_copy(Path("training/samples/frame.npz"), False))
+
     def test_local_document_links_and_anchors_resolve(self):
         for path in self.documents:
             text = path.read_text()

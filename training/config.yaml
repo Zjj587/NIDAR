@@ -1,0 +1,17 @@
+# Cleaned baseline recipe, not a recovered recipe for the hosted epoch_010.pth.
+seed: 0
+model_config: ../inference/configs/deep_intrinsic_public_model.yaml
+training:
+  epochs: 100
+  batch_size: 4
+  lr: 0.0001
+  weight_decay: 0.00001
+loss:
+  weights:
+    reconstruction: 1.0
+    reflectance_smooth: 0.1
+    shading_smooth: 0.05
+    reflectance_mean: 0.1
+    intensity: 1.0
+  edge_weight: 10.0
+  target_mean: 0.5

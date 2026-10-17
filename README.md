@@ -14,7 +14,8 @@
   <a href="#quick-start">Quick start</a> &middot;
   <a href="docs/DEMO.md">Demo guide</a> &middot;
   <a href="docs/DATA_ACCESS.md">Data access</a> &middot;
-  <a href="docs/MODEL_ZOO.md">Models</a>
+  <a href="docs/MODEL_ZOO.md">Models</a> &middot;
+  <a href="docs/TRAINING.md">Training</a>
 </p>
 
 **Add a synthesized intensity channel to an existing point cloud.** NIDAR
@@ -118,6 +119,24 @@ The STN is based on cs-stereo and is frozen for inference. Checkpoint identities
 training metadata and attribution are in the [model zoo](docs/MODEL_ZOO.md).
 Small-head IRNet checkpoints are incompatible with this default.
 
+## Train IRNet
+
+The [training guide](docs/TRAINING.md) covers official-data preparation,
+scene-disjoint splits, **U-Net + DeepLab** training, checkpoint resume and
+per-epoch qualitative comparisons. The frozen STN provides pseudo-NIR inputs;
+IRNet learns with `R*S` reconstruction and masked LiDAR intensity supervision.
+
+```bash
+python -m training.prepare --config training/sources.example.yaml \
+  --output ./data/irnet_pairs --device cuda
+python -m training.train --data ./data/irnet_pairs/manifest.json \
+  --output ./runs/irnet --device cuda
+```
+
+Set the scene paths in the example YAML first. This is a cleaned baseline recipe,
+not an exact replay of the released checkpoint's original training run. Raw
+datasets and STN training are not included. Deployment remains `R + remap`.
+
 ## Supported Workflows
 
 | Workflow | Current scope |
@@ -127,7 +146,8 @@ Small-head IRNet checkpoints are incompatible with this default.
 | Converted nuScenes inference | Full CPU `R + remap` route and saved-image inspection passed on those two frames; no full-split benchmark |
 | Static previews and MAE/RMSE/SSIM evaluation | Included |
 | Interactive point-cloud viewing | Optional Open3D dependency |
-| Training and downstream experiment harnesses | Not included in this inference release |
+| IRNet training and sample preparation | Included; CPU train/resume smoke on two nuScenes scenes |
+| STN training and downstream experiment harnesses | Not included |
 
 See [tested environments and acceptance results](docs/RELEASE_ACCEPTANCE.md).
 These small CPU checks validate the demo workflow, not full-split quality or
