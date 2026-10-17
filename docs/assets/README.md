@@ -16,3 +16,10 @@ Both originals were unchanged relative to that local website revision when
 copied. These depict a nuScenes research example, not a newly executed public
 Waymo demo. No prediction was regenerated or retouched for the overview.
 Research media and underlying data terms are distinct from the code license.
+
+Underlying data: [nuScenes](https://www.nuscenes.org/nuscenes), provided by
+Motional AD Inc. The dataset and derived visualizations are subject to the
+[nuScenes terms](https://www.nuscenes.org/terms-of-use), including
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+and the provider's additional conditions. These figures are not licensed by
+the repository's Apache-2.0 code license. No provider endorsement is implied.
