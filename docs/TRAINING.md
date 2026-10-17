@@ -7,6 +7,37 @@ the released IRNet checkpoint does not contain its complete training configurati
 The default optimizer, loss weights and preprocessing below are explicit baseline
 choices, not a claim to recover the original paper's training run.
 
+## Historical Training And Current Recipe
+
+The historical workflow used pseudo-NIR inputs paired with **densified projected
+LiDAR intensity maps**. The archived preparation implementation applies per-image
+1st/99th-percentile intensity normalization, 5 x 5 elliptical dilation, and
+Gaussian smoothing with sigma 2.0, normalized by the smoothed support mask.
+It saves paired grayscale intensity images. These are targets derived from
+sparse LiDAR measurements, not independently measured dense ground truth.
+This target preparation is separate from the deployment-time **R + remap** step.
+
+**The commands on this page do not currently implement that historical
+densification workflow.** They implement the sparse-target baseline described
+below. Changing label density, normalization and loss terms changes the training
+method; it is not just a cleanup of file paths.
+
+| Item | Historical record | Current public recipe |
+| --- | --- | --- |
+| IRNet input | STN pseudo-NIR | STN pseudo-NIR |
+| Intensity target | Projected LiDAR, normalized and densified | Direct sparse projection with an explicit validity mask |
+| Training schedule | Paper: 17 Waymo scenarios, 10 epochs, batch size 8 | Configurable scene manifests; default 100 epochs, batch size 4 |
+| Intensity objective | Paper: L1 + L2 + SSIM, multi-scale supervision and warmup | Masked L1 without multi-scale terms or warmup |
+| Hardware evidence | Paper: one RTX 3090; owner confirms 24 GB VRAM | Small CPU smoke only; no full-resolution CUDA acceptance |
+
+The archived improved configuration also specifies an IRNet size of 384 x 960;
+the current preparation example uses 384 x 1248. The checkpoint itself does not
+embed the training configuration, and archived files may include later changes.
+These records therefore do not establish every setting used for the released
+weights. The original densified-data path and complete matching loss/configuration
+still need a separate reproduction check. The original GPU is not a measured
+minimum-memory requirement or a guarantee that the current defaults fit 24 GB.
+
 ## Prepare Data
 
 Use the inference environment from the [quick start](../README.md#quick-start).

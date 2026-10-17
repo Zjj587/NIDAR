@@ -134,8 +134,10 @@ python -m training.train --data ./data/irnet_pairs/manifest.json \
 ```
 
 Set the scene paths in the example YAML first. This is a cleaned baseline recipe,
-not an exact replay of the released checkpoint's original training run. Raw
-datasets and STN training are not included. Deployment remains `R + remap`.
+not an exact replay of the released checkpoint's original training run. It uses
+sparse targets, not the historical densified LiDAR maps; see the
+[training differences](docs/TRAINING.md#historical-training-and-current-recipe).
+Raw datasets and STN training are not included. Deployment remains `R + remap`.
 
 ## Supported Workflows
 
