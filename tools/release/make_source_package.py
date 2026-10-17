@@ -54,6 +54,8 @@ DEFAULT_EXCLUDES = (
 PUBLIC_WAYMO_INCLUDE = (
     ".gitignore",
     "LICENSE",
+    "LICENSES/CS_STEREO_MIT.txt",
+    "THIRD_PARTY_NOTICES.md",
     "README.md",
     "CITATION.cff",
     "CONTRIBUTING.md",

@@ -42,6 +42,14 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertNotIn("docs/OPEN_SOURCE_RELEASE_CHECKLIST.md", readme)
         self.assertIn("docs/RELEASE_ACCEPTANCE.md", readme)
 
+    def test_third_party_stn_notice_is_shipped(self):
+        for name in ("LICENSES/CS_STEREO_MIT.txt", "THIRD_PARTY_NOTICES.md"):
+            self.assertTrue((ROOT / name).is_file())
+            self.assertTrue(package.should_copy(Path(name), False))
+        notice = (ROOT / "LICENSES/CS_STEREO_MIT.txt").read_text()
+        self.assertIn("Copyright (c) 2019 Tiancheng Zhi", notice)
+        self.assertIn("The above copyright notice and this permission notice", notice)
+
     def test_local_document_links_and_anchors_resolve(self):
         for path in self.documents:
             text = path.read_text()

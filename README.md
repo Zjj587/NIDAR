@@ -140,6 +140,10 @@ absolute returned power or generate XYZ from RGB. Range, visibility, exposure,
 and sensor domain affect the result. Quantile calibrations are dataset-specific,
 not sensor-independent. Intrinsic outputs may lose detail or vary between adjacent frames.
 
+The code license does not grant rights to weights or datasets. Read the
+[third-party and artifact notices](THIRD_PARTY_NOTICES.md) before redistribution
+or commercial use.
+
 ## Contributing And Support
 
 Read [troubleshooting](docs/TROUBLESHOOTING.md), or open a
