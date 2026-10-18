@@ -58,6 +58,13 @@ deployment-time quantile remapping. Never normalize predictions against an
 evaluation frame's GT. The frozen public STN wrapper normalizes its uint8 output
 once; exact reproduction of the historical pseudo-NIR image bytes is not claimed.
 
+**Known label limitation:** zero-valued labels can arise from missing support,
+percentile clipping, or small positive values lost in uint8 conversion/resizing.
+`target > 0` is therefore not a reliable measurement-validity mask. The frozen
+v0.1.0 recipe preserves the historical behavior; mask, precision and normalization
+changes require separate controlled evaluation. Their contribution to R blur or
+downstream task performance has not been established.
+
 ## Current Public Data Format
 
 Use the [official converters](DATA_ACCESS.md). Each export must contain RGB,

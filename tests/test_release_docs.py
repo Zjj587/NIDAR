@@ -97,6 +97,28 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertIn("last_inference.pth", guide)
         self.assertNotIn("does not implement this historical densification path", data)
 
+    def test_frozen_release_and_progress_have_explicit_boundaries(self):
+        readme = (ROOT / "README.md").read_text()
+        release = (ROOT / "docs/RELEASE.md").read_text()
+        self.assertTrue(package.should_copy(Path("docs/RELEASE.md"), False))
+        self.assertIn("git clone --branch v0.1.0", readme)
+        self.assertIn("git clone --branch v0.1.0", release)
+        for label in ("Waymo:", "nuScenes:", "Public STN", "IRNet training:"):
+            self.assertIn("- [x] " + label, readme)
+        for label in ("BC training/evaluation code", "IRNet improvements:", "Packaged UE5"):
+            self.assertIn("- [ ] " + label, readme)
+        self.assertIn("not available features or proven gains", readme)
+        self.assertIn("No improvement in R", release)
+        self.assertIn("1390055c2c564d3276f29cc513b3ef3cdc355e40", release)
+
+    def test_training_example_matches_download_guide(self):
+        guide = (ROOT / "docs/TRAINING.md").read_text()
+        self.assertEqual(guide.count("--dataroot ./data/nuscenes_official"), 2)
+        self.assertEqual(guide.count(".venv-nuscenes-export/bin/python"), 2)
+        data = (ROOT / "docs/TRAINING_DATA.md").read_text()
+        self.assertIn("uint8 conversion/resizing", data)
+        self.assertIn("not a reliable measurement-validity mask", data)
+
 
 if __name__ == "__main__":
     unittest.main()

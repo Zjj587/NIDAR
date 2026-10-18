@@ -35,13 +35,27 @@ visual comparisons.
 *Existing nuScenes research example from the [project page](https://nidar-web.github.io/#nuscenes-comparisons).
 This figure is not a validation run of the new official-data converter.*
 
+## Release Progress
+
+**Frozen baseline: [v0.1.0](docs/RELEASE.md).** Checked items are released and
+verified within the [documented scope](docs/RELEASE_ACCEPTANCE.md), not full-split
+benchmarks. Unchecked items are planned work, not available features or proven gains.
+
+- [x] Waymo: official-data download guide, conversion and two-frame CPU demo.
+- [x] nuScenes: official mini download guide, conversion and two-frame CPU demo.
+- [x] Public STN and full U-Net + DeepLab IRNet weights, with verified checksums.
+- [x] IRNet training: dense-label preparation, training/resume and visual diagnostics.
+- [ ] BC training/evaluation code and a reproducible application guide.
+- [ ] IRNet improvements: supervision masks, label precision/normalization and quality ablations.
+- [ ] Packaged UE5 and Isaac Sim demos.
+
 ## Quick Start
 
 Use Python 3.10 and PyTorch 2.6 or newer. PyTorch 2.8 is used for checkpoint
 release checks. Install a PyTorch build appropriate for your CPU/GPU.
 
 ```bash
-git clone https://github.com/Zjj587/NIDAR.git
+git clone --branch v0.1.0 https://github.com/Zjj587/NIDAR.git
 cd NIDAR
 conda create -n nidar python=3.10 -y
 conda activate nidar

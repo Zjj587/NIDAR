@@ -86,9 +86,11 @@ For a small engineering check, export two **different scenes** in the separate
 nuScenes export environment:
 
 ```bash
-python tools/data_export/prepare_nuscenes.py --dataroot ./data/nuscenes \
+.venv-nuscenes-export/bin/python tools/data_export/prepare_nuscenes.py \
+  --dataroot ./data/nuscenes_official \
   --version v1.0-mini --scene scene-0061 --frame-count 2 --output-root ./data/scene_train
-python tools/data_export/prepare_nuscenes.py --dataroot ./data/nuscenes \
+.venv-nuscenes-export/bin/python tools/data_export/prepare_nuscenes.py \
+  --dataroot ./data/nuscenes_official \
   --version v1.0-mini --scene scene-0103 --frame-count 2 --output-root ./data/scene_val
 ```
 
