@@ -7,101 +7,104 @@
 IRNet takes a **single-channel pseudo-NIR image**. Its LiDAR intensity target
 comes from the corresponding point cloud projected into that camera. A sample
 is one camera view of one frame, not an entire scene or an individual point.
-STN is frozen during this preparation and IRNet training.
+STN remains frozen during preparation and IRNet training.
 
 ## Inputs And Supervision
 
 | Signal | Source | Role |
 | --- | --- | --- |
-| RGB | Calibrated camera image | Input to the frozen STN |
-| Pseudo-NIR `X` | STN output | IRNet input and reconstruction target |
-| XYZ and calibration | LiDAR and camera metadata | Align intensity measurements with the image |
-| LiDAR intensity `Y` | Projected sensor returns | Supervise the auxiliary intensity head `I_hat` |
-| Reflectance `R` and shading `S` | U-Net outputs | Intrinsic factors; their product reconstructs `X` |
+| RGB | Calibrated camera image | Input to frozen STN |
+| Pseudo-NIR X | STN output | IRNet input and reconstruction target |
+| XYZ and calibration | LiDAR and camera metadata | Align intensity with images |
+| Intensity Y | Projected, transformed sensor returns | Supervise auxiliary head I_hat |
+| R and S | U-Net outputs | Intrinsic factors; R*S reconstructs X |
 
-For the released model configuration, DeepLab receives `R`, without `S`.
-The intensity loss updates both DeepLab and the U-Net through `R`. There is
-no measured reflectance target, and `R*S` is **not** supervised to reconstruct
-the LiDAR intensity map. XYZ/depth is used for projection, not fed as an
-additional image channel to this IRNet.
-
-Training and deployment have different endpoints:
-
-- **Training:** reconstruct pseudo-NIR with `R*S`, and predict the aligned
-  LiDAR-derived target with `I_hat`, together with intrinsic regularization.
-- **Deployment:** project `R` onto the point cloud, then apply the fixed
-  dataset-specific quantile remapping. `I_hat` is not the default final output.
+DeepLab receives `R`, without `S`. Its loss updates DeepLab and U-Net through
+`R`. There is no measured reflectance target. `R*S` is **not** trained to
+reconstruct LiDAR intensity. XYZ/depth is used for projection, not supplied as
+an extra image channel. Deployment projects **R + remap**, not I_hat by default.
 
 ## Historical Densified Targets
 
-The historical preparation pairs pseudo-NIR with grayscale intensity images:
+The default public preparation now implements **`historical-dense-v1`**:
 
-1. Project LiDAR returns into each calibrated camera view.
-2. Normalize covered intensity values using that image's 1st/99th percentiles.
-3. Expand projected support using a 5 x 5 elliptical dilation.
-4. Apply Gaussian smoothing with sigma 2.0 and normalize by smoothed support.
-5. Save an 8-bit grayscale target and pair it with the matching pseudo-NIR view.
+1. Project returns at the original camera image resolution.
+2. Resolve collisions in the retained input-X ordering; see the caveat below.
+3. Normalize occupied intensity values using each image's 1st/99th percentiles.
+4. Apply 5 x 5 elliptical dilation and Gaussian smoothing with sigma 2.0;
+   divide by the correspondingly smoothed support and convert to uint8.
+5. Resize paired pseudo-NIR and target to 384 x 960 using PIL bilinear sampling.
+6. Find rows with target > 0.02, crop the occupied row interval, expanding its
+   top upward toward half the prepared image height when needed. Resize both
+   cropped images back to the configured resolution, preserving the original
+   uint8 round trip.
+7. Use an **all-true** mask over that crop, including zeros. Inputs without any
+   usable target are rejected, rather than silently trained without supervision.
 
-These are **densified targets derived from sparse measurements**, not dense
-independent sensor ground truth or ground-truth material reflectance.
-Uncovered image regions do not become measured ground truth through smoothing.
-Historical data loading also resizes/crops paired images; that preprocessing
-must be considered when comparing it with a direct sparse projection.
+These are **densified labels derived from sparse measurements**, not independently
+measured dense GT or material reflectance. Original loading supervises even
+zero-valued regions within the crop; `valid_mask` does not mean measurement
+coverage for this recipe. Inspect the saved `target_nonzero_pixels` and preview
+before running a large training job.
 
-Per-image label normalization is a **training-data transformation**. It is not
-the deployment quantile remapping, and it must not be used to fit a prediction
-to an evaluation frame's ground truth. The current public preparation command
-does not implement this historical densification path. See the
-[recipe comparison](TRAINING.md#historical-training-and-current-recipe).
+**Compatibility caveat:** the retained generator sorts `valid_points[:, 0]`,
+but its projector returns input coordinates, not camera coordinates. Thus the
+historical collision ordering is not generally a camera-depth z-buffer for
+world-coordinate inputs. Compatibility mode preserves it explicitly. A corrected
+visibility model would be a new recipe requiring separate evaluation.
+
+Per-image percentile normalization is a **label transformation**, separate from
+deployment-time quantile remapping. Never normalize predictions against an
+evaluation frame's GT. The frozen public STN wrapper normalizes its uint8 output
+once; exact reproduction of the historical pseudo-NIR image bytes is not claimed.
 
 ## Current Public Data Format
 
-Use the [official converters](DATA_ACCESS.md) first. Each exported scene must
-contain RGB images, calibration, world-coordinate XYZ/intensity arrays and a
-completed `input_manifest.json`. List distinct scenes in
-[sources.example.yaml](../training/sources.example.yaml), assigning each whole
-scene to `train`, `val` or `test`.
+Use the [official converters](DATA_ACCESS.md). Each export must contain RGB,
+calibration, world-coordinate XYZ/intensity arrays and a complete
+`input_manifest.json`. Set scenes/splits in
+[sources.example.yaml](../training/sources.example.yaml), then run:
 
 ```bash
 python -m training.prepare --config training/sources.example.yaml \
   --output ./data/irnet_pairs --device cuda
 ```
 
-The prepared directory contains `manifest.json` and `samples/*.npz`:
+The result contains `manifest.json` and `samples/*.npz`:
 
 | Array | Shape / type | Meaning |
 | --- | --- | --- |
-| `input` | H x W, float32 | Pseudo-NIR in [0, 1] |
-| `target` | H x W, float32 | Sparse projected intensity in [0, 1] |
-| `valid_mask` | H x W, bool | Pixels with retained LiDAR returns, including valid zeros |
-| `rgb` | H x W x 3, uint8 | RGB preview, not an extra IRNet input |
+| input | H x W, float32 | Transformed pseudo-NIR in [0, 1] |
+| target | H x W, float32 | Transformed LiDAR-derived label in [0, 1] |
+| valid_mask | H x W, bool | Recipe-specific supervision support |
+| rgb | H x W x 3, uint8 | Aligned preview, not another IRNet input |
 
-The manifest records upstream scene/frame/camera identity, split, sample and
-source-manifest checksums, STN checksum, resolution, exposure ratio, scale,
-valid-pixel counts and clipped-pixel counts. It is a local reproducibility
-record, not permission to redistribute the underlying data.
+The manifest records recipe, split policy, upstream scene/frame/camera identity,
+each sample's split/checksum, source manifest checksum, STN checksum, resolution
+and exposure ratio. Dense records also give original projected-pixel count,
+crop rows and nonzero target count. `intensity_scale` is unused and clipped count
+is null in dense mode because the historical normalization is per image.
+This is a local provenance record, not permission to redistribute the data.
 
-Current preparation retains the nearest camera-depth return at each output
-pixel and uses `clip(exported_intensity / intensity_scale, 0, 1)` without
-dilation or per-image percentile normalization. Missing coverage is masked;
-a valid zero return is not discarded. Use a fixed scale selected from
-training data only. nuScenes exports are already divided by 255; Waymo
-exports retain native intensity. See the [scale notes](TRAINING.md#prepare-data).
+For `sparse-v1`, the mask instead marks retained sensor returns, including true
+zeros. The closest camera-depth point per output pixel is retained, no label
+dilation is applied, and targets are `clip(exported_intensity / intensity_scale,
+0, 1)`. nuScenes exports are already divided by 255; Waymo exports retain native
+intensity. Choose a fixed scale from training data only and inspect clipped counts.
+Missing sparse coverage appears blue-gray in previews, not as zero-valued GT.
 
 ## Split And Quality Checks
 
-- Keep adjacent frames and different cameras from one scene in the same split.
-  The preparer rejects cross-split reuse of an upstream scene, even when its
-  local directories have different names.
-- Hold out a test split independently of training and checkpoint selection.
-  More camera views are more samples, not more independent scenes.
-- Inspect valid/clipped counts and the per-epoch RGB, pseudo-NIR, target,
-  `R`, `S`, reconstruction, `I_hat` and error panels before long training.
-  Missing sparse targets are shown in blue-gray rather than as black GT.
-- A two-scene mini-data smoke checks mechanics, not generalization. Published
-  weights, a new training run and its deployment remap need separate evaluation.
+- The recommended `scene-disjoint` policy keeps adjacent frames and cameras from
+  one upstream scene together and rejects cross-split aliases and duplicates.
+- Explicit `sample-random-legacy` compatibility reproduces the old 90/10 splitting
+  policy with a newly frozen seed, not its unknown historical membership. See
+  [training commands](TRAINING.md#prepare-data); this is not held-out-scene evidence.
+- Keep test scenes separate from training, model selection and remap calibration.
+  More camera views are not more independent scenes.
+- Check target coverage and per-epoch RGB/pseudo-NIR/target/R/S/R*S/I_hat/error
+  panels. Cropping and dense-label zeros can strongly affect what is optimized.
+- Two-scene mini smokes test mechanics, not generalization or convergence.
 
-Download data under the provider's terms. NIDAR does not redistribute raw or
-prepared Waymo/nuScenes training samples. Local preparation is supported;
-STN retraining and an exact historical dense-training reproduction package
-are not currently included.
+Data remain subject to provider terms. Raw/prepared Waymo and nuScenes samples,
+complete historical splits and STN retraining are not distributed here.

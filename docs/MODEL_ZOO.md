@@ -82,11 +82,13 @@ LiDAR intensity projections. `R*S` reconstructs the pseudo-NIR input; the
 DeepLab head `I_hat` receives intensity supervision through `R`. Deployment
 uses `R + remap`, not the supervised head as its final point-cloud signal.
 
-The repository now includes a runnable **sparse-target training baseline**,
-with [data preparation](TRAINING_DATA.md), scene-disjoint manifests, training,
-resume and qualitative comparisons. It is not the complete historical
-dense-training reproduction package. See the [training reference](TRAINING.md#historical-training-and-current-recipe)
-for saved historical settings, known differences and verification boundaries.
+The default [training recipe](TRAINING.md) restores densified labels, the recovered
+intrinsic/intensity objective, warmup and optimizer schedule, with verified
+source parity and bounded real-data training checks. [Data preparation](TRAINING_DATA.md)
+supports scene-disjoint splits and an explicit legacy sample-random policy.
+The earlier sparse-target baseline remains optional. Exact original split
+membership and a bitwise replay of the hosted checkpoint's training are not
+claimed. Published weights and their hashes remain unchanged.
 
 ## Verified Inference
 

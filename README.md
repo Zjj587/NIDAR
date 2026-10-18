@@ -141,10 +141,11 @@ python -m training.train --data ./data/irnet_pairs/manifest.json \
 
 Set the scene paths in the example YAML first. Training saves resumable and
 inference checkpoints, loss histories, and per-epoch input/GT/output comparisons.
-This runnable recipe uses **sparse targets**, not the paper's historical
-densified LiDAR maps, and is not an exact replay of the hosted checkpoint's
-training. Raw datasets and STN training are not included. Deployment remains
-`R + remap`; training is not required to run the pretrained demo.
+The default restores **densified LiDAR targets**, the intrinsic/intensity losses
+and the recovered training schedule. An optional sparse baseline is also included.
+See the [verification and replay limits](docs/TRAINING.md#verification-and-limits).
+Raw datasets and STN training are not included. Deployment remains `R + remap`;
+training is not required to run the pretrained demo.
 
 ## Supported Workflows
 
@@ -155,12 +156,13 @@ training. Raw datasets and STN training are not included. Deployment remains
 | Converted nuScenes inference | Full CPU `R + remap` route and saved-image inspection passed on those two frames; no full-split benchmark |
 | Static previews and MAE/RMSE/SSIM evaluation | Included |
 | Interactive point-cloud viewing | Optional Open3D dependency |
-| IRNet training and sample preparation | Included; CPU train/resume smoke on two nuScenes scenes |
+| IRNet dense training and sample preparation | Source parity, real-data CPU train/resume and one full-size RTX 3090 step checked |
 | STN training and downstream experiment harnesses | Not included |
 
 See [tested environments and acceptance results](docs/RELEASE_ACCEPTANCE.md).
-These small CPU checks validate the demo workflow, not full-split quality or
-CUDA performance. A research result and a tested public integration are distinct.
+These bounded checks validate workflow mechanics, not full-split quality,
+convergence or sustained performance. A research result and a tested public
+integration are distinct.
 
 ## Limits
 

@@ -1,0 +1,16 @@
+# Compatibility experiment only: this is NOT scene-held-out validation.
+# The seed fixes a new split; the historical run's exact indices are unknown.
+recipe: historical-dense-v1
+split_policy: sample-random-legacy
+split_seed: 0
+val_ratio: 0.1
+stn_checkpoint: ../weights/stn/47.pth
+exposure_ratio: 0.5
+image_shape: [384, 960]
+sources:
+  - root: ../data/scene_train
+    split: pool
+    cameras: [1, 2, 3, 4, 5, 6]
+  - root: ../data/scene_val
+    split: pool
+    cameras: [1, 2, 3, 4, 5, 6]

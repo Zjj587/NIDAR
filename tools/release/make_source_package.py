@@ -2,7 +2,7 @@
 """Create a lightweight NIDAR source-release folder.
 
 By default this creates the public inference, data-conversion and IRNet training
-package, not the full development tree. Historical training variants, ROS,
+package, not the full development tree. Unreleased training variants, ROS,
 benchmarks and additional routes are not included.
 """
 
@@ -82,13 +82,17 @@ PUBLIC_WAYMO_INCLUDE = (
     "tests/test_download_weights.py",
     "tests/test_data_export.py",
     "tests/test_training.py",
+    "tests/test_historical_training.py",
     "training/__init__.py",
     "training/data.py",
     "training/losses.py",
+    "training/historical.py",
     "training/prepare.py",
     "training/train.py",
     "training/config.yaml",
+    "training/config_sparse.yaml",
     "training/sources.example.yaml",
+    "training/sources.legacy.example.yaml",
     "tools/data_export/common.py",
     "tools/data_export/prepare_waymo.py",
     "tools/data_export/prepare_nuscenes.py",

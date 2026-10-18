@@ -1,89 +1,89 @@
 # IRNet Training
 
-This is a cleaned, runnable **U-Net + DeepLab** training recipe sharing the
-public inference model. It retains intrinsic reconstruction and sparse LiDAR
-supervision. It is **not an exact reproduction recipe for the hosted weights**:
-the released IRNet checkpoint does not contain its complete training configuration.
-The default optimizer, loss weights and preprocessing below are explicit baseline
-choices, not a claim to recover the original paper's training run.
+The default **`historical-dense-v1`** recipe restores the retained U-Net + DeepLab
+training method: pseudo-NIR inputs, densified LiDAR-derived labels, intrinsic
+reconstruction, multi-scale intensity supervision, warmup and AdamW/cosine
+scheduling. The earlier sparse-label recipe remains an optional baseline.
 
-Start with [training data and supervision](TRAINING_DATA.md) for what each
-sample contains and which output each target supervises. For the pretrained
-point-cloud demo, use the [quick start](../README.md#quick-start); no retraining
-is required.
+Start with [training data and supervision](TRAINING_DATA.md). The
+[pretrained demo](../README.md#quick-start) does not require training.
 
 ## Historical Training And Current Recipe
 
-The historical workflow used pseudo-NIR inputs paired with **densified projected
-LiDAR intensity maps**. The archived preparation implementation applies per-image
-1st/99th-percentile intensity normalization, 5 x 5 elliptical dilation, and
-Gaussian smoothing with sigma 2.0, normalized by the smoothed support mask.
-It saves paired grayscale intensity images. These are targets derived from
-sparse LiDAR measurements, not independently measured dense ground truth.
-This target preparation is separate from the deployment-time **R + remap** step.
-
-**The commands on this page do not currently implement that historical
-densification workflow.** They implement the sparse-target baseline described
-below. Changing label density, normalization and loss terms changes the training
-method; it is not just a cleanup of file paths.
-
-| Item | Historical record | Current public recipe |
-| --- | --- | --- |
-| IRNet input | STN pseudo-NIR | STN pseudo-NIR |
-| Intensity target | Projected LiDAR, normalized and densified | Direct sparse projection with an explicit validity mask |
-| Training schedule | Paper: 17 Waymo scenarios, 10 epochs, batch size 8 | Configurable scene manifests; default 100 epochs, batch size 4 |
-| Intensity objective | Paper: L1 + L2 + SSIM, multi-scale supervision and warmup | Masked L1 without multi-scale terms or warmup |
-| Optimizer evidence | Paper reports Adam; retained v3 trainer uses AdamW with cosine scheduling | Adam with constant learning rate |
-| Hardware evidence | Paper: one RTX 3090; owner confirms 24 GB VRAM | Small CPU smoke only; no full-resolution CUDA acceptance |
-
-The hosted `epoch_010.pth` does not embed a training configuration. A separate
-companion checkpoint retained in the historical training output does contain
-saved arguments and the input configuration. Its settings are summarized below;
-it is an earlier checkpoint with different model tensors, not a replacement
-for the hosted weights. Archived source can also contain later edits. Neither
-record alone establishes the complete final run or its original split membership.
+This is a **verified restoration of the retained method, not a bitwise replay
+of the hosted checkpoint's entire training run**. The released checkpoint has
+no embedded configuration. A separate companion checkpoint supplies saved
+arguments, and the original 10-epoch TensorBoard history corroborates the
+effective loss weights and cosine schedule. That companion checkpoint has
+different model tensors and does not replace the published weights.
 
 ### Recovered Configuration Reference
 
-| Setting | Saved companion-checkpoint configuration |
+| Setting | Default restored recipe |
 | --- | --- |
-| Architecture | U-Net intrinsic network + DeepLab head, base channels 32, output stride 16; head receives R only |
-| IRNet image size | 384 x 960; the current public preparation default is 384 x 1248 |
-| Schedule | 10 configured epochs, batch size 8, learning rate 1e-4, weight decay 1e-5 |
-| Validation fraction | 0.1; the saved arguments do not contain the actual split indices |
-| Intrinsic terms | Reconstruction 1.0, R smoothness 0.01, mean proxy 0.01 with target 0.5; S smoothness/TV disabled |
-| Intensity components | L1 1.0, L2 0.5, SSIM 0.2; multi-scale option enabled at 1.0, 0.5 and 0.25 |
-| Warmup settings | One warmup epoch and one ramp-up epoch; interpret using the trainer's zero-based schedule |
-| Optional objectives | VGG and region loss weights zero; color matching and distribution loss options off |
+| Architecture | U-Net + DeepLab, base channels 32, output stride 16; DeepLab receives R only |
+| Image size | 384 x 960 for IRNet; frozen STN uses 384 x 1248 internally |
+| Schedule | 10 epochs, batch 8, learning rate 1e-4, weight decay 1e-5 |
+| Optimizer | AdamW; cosine decay to 1e-6 over the configured 10 epochs |
+| Reconstruction | L1 between R*S and pseudo-NIR, weight 1.0 |
+| Intrinsic regularization | R bilateral smoothness 0.01, color sigma 0.01; R mean proxy 0.01, target 0.5 |
+| Intensity objective | Multi-scale L1 + 0.5 L2 + 0.2 Gaussian-window SSIM loss |
+| L1 scales | 1.0, 0.5, 0.25, averaged; L2 and SSIM at full prepared resolution |
+| Effective intensity weight | 0 in epochs 1 and 2; 1 in epochs 3 through 10 |
+| Disabled terms | S smoothness/TV, VGG, region, color-matching and distribution losses |
+| Training batches | Drop incomplete final batch; clip gradient norm to 1.0 |
+| Augmentation | Paired horizontal flip; input-only contrast/brightness jitter |
 
-Two configuration names must not be conflated: the saved YAML has
-`lambda_lidar: 0.5`, while the saved parsed arguments also have
-`lambda_intensity: 1.0`. The retained improved-loss branch uses the latter
-with warmup; `lambda_lidar` belongs to the alternative loss branch. Copying
-the YAML value alone would not reproduce that branch's effective weight.
-The companion best checkpoint was saved at zero-based epoch 1; its validation
-total cannot be compared directly with later epochs under a different intensity
-weight. The hosted checkpoint is zero-based epoch 9 and remains unchanged.
+The saved YAML's `lambda_lidar: 0.5` is for an alternative loss branch. The
+active improved-loss branch uses `lambda_intensity: 1.0`. The original zero-based
+warmup/ramp implementation gives weights **[0, 0, 1, ...]**, despite settings named
+one warmup epoch and one ramp-up epoch. The restoration preserves this behavior.
 
-The original densified-data path and complete matching loss/configuration
-still need a separate reproduction check. The original GPU is not a measured
-minimum-memory requirement or a guarantee that the current defaults fit 24 GB.
+**Checkpoint selection caveat:** the original companion `best` checkpoint is
+at zero-based epoch 1, before intensity supervision is active. Minimum full
+validation loss across different warmup phases is not a fair comparison of
+intensity quality. The public hosted weight is the final, zero-based epoch-9
+checkpoint. Both final and minimum-total model-only outputs are saved below;
+evaluate their deployment behavior separately.
 
-The retained v3 trainer uses a random sample-level validation split,
-whereas the public preparer requires scene-disjoint splits. Original split
-indices and the exact source/configuration at training time are not established
-by the released checkpoint. The optimizer discrepancy above is left explicit;
-the paper, a later source snapshot and a runnable new baseline are different
-forms of evidence, not interchangeable reproduction records.
+### Verification And Limits
+
+- Compared against retained source: exact model-state layout and four forward
+  outputs, three target-generator fixtures, three loader fixtures, and loss
+  components/gradients across warmup phases (tolerance 1e-6).
+- Six original Waymo image/target pairs across three scenes: restored loading
+  agrees pixel-for-pixel with the original loader at 384 x 960.
+- Six original raw-cloud target regenerations: portable and retained generators
+  agree exactly. Compared with stored historical PNGs, four agree exactly;
+  the other two differ at 136 and 10 of 2,457,600 pixels. The source of those
+  small historical differences is not established; byte-identical replay of
+  every historical label is not claimed.
+- One RTX 3090 FP32 training step at batch 8 and 384 x 960 passed with finite
+  gradients in both networks. Peak tensor allocation was 10.00 GiB; allocator
+  reservation was 15.78 GiB. This used random initialization and six real pairs
+  repeated to eight, not a convergence experiment or a memory minimum.
+- Real nuScenes mini: four training and two validation views, full released
+  architecture initialized from public IRNet, three epochs at 64 x 192, with
+  save/resume across warmup and strict inference reload. See
+  [acceptance scope](RELEASE_ACCEPTANCE.md#dense-training-restoration-2026-10-18).
+
+The paper reports 17 Waymo scenarios, 10 epochs, batch 8 and one RTX 3090.
+It calls the optimizer Adam; the retained trainer uses **AdamW**. We preserve
+and disclose that discrepancy instead of treating the paper and source as
+interchangeable records. Exact original split indices, per-epoch sample order,
+training-time source revision and the byte-identical historical STN preparation
+route remain unestablished. Current files or counts do not prove historical
+dataset membership. No full retraining or new R+remap quality claim is made.
 
 ## Prepare Data
 
-Use the inference environment from the [quick start](../README.md#quick-start).
-Obtain data yourself under the provider's terms and follow [data access](DATA_ACCESS.md).
-No raw or prepared Waymo/nuScenes training samples are included or redistributed.
+Use the [inference environment](../README.md#quick-start), including PyTorch
+2.6 or newer for restricted checkpoint loading. Obtain data under its provider's
+terms and use the [official converters](DATA_ACCESS.md). No raw or prepared
+Waymo/nuScenes training samples are redistributed.
 
-For example, in the separate nuScenes export environment, export two **different
-scenes** from the official mini split for a small engineering check:
+For a small engineering check, export two **different scenes** in the separate
+nuScenes export environment:
 
 ```bash
 python tools/data_export/prepare_nuscenes.py --dataroot ./data/nuscenes \
@@ -92,47 +92,41 @@ python tools/data_export/prepare_nuscenes.py --dataroot ./data/nuscenes \
   --version v1.0-mini --scene scene-0103 --frame-count 2 --output-root ./data/scene_val
 ```
 
-For real training, choose adequate training/validation scenes from the official
-split and keep a separate held-out test split. The mini example is not a benchmark.
-Waymo exports use the same training preparation interface; assign separate
-segments to separate splits. A two-frame, single-segment fixture cannot establish
-scene-disjoint train/validation sets.
+Set local exports in [sources.example.yaml](../training/sources.example.yaml).
+Paths are relative to that YAML. Each sample is one camera view; all frames in
+an export are used and `cameras` selects views. The default scene-disjoint policy
+rejects reuse of an upstream scene across train/val/test, even through aliases.
+For real training, use adequate training scenes and independent validation/test
+scenes. Two mini scenes are not a benchmark. Waymo segments use the same interface.
 
-Edit [sources.example.yaml](../training/sources.example.yaml) to list your local
-exports. Paths are relative to that YAML file. All frames in each export are used;
-`cameras` optionally selects camera IDs. More exports may share the same split.
-Split checks use upstream scene identities, not directory names: images or
-neighboring frames from one scene cannot enter multiple splits.
-
-Back in the NIDAR environment, run from the repository root:
+Back in the NIDAR environment, from the repository root:
 
 ```bash
 python -m training.prepare --config training/sources.example.yaml \
-  --output ./data/irnet_pairs --device cpu
+  --output ./data/irnet_pairs --device cuda
 ```
 
-The frozen STN runs at its released 384 x 1248 internal resolution and exposure
-ratio 0.5. Its uint8 pseudo-NIR output is normalized **once** to [0, 1]. The
-`image_shape` option controls the prepared IRNet resolution, not STN resolution.
-Preparation saves float32 inputs/targets, RGB previews and a separate boolean
-LiDAR validity mask. Sparse targets are projected directly at the target size,
-not bilinearly resized or dilated. When returns share a pixel, the nearest in
-camera depth is retained. This is a raster z-buffer, not a complete visibility
-or moving-object correction.
+The frozen STN produces uint8 pseudo-NIR, normalized once to [0, 1]. The dense
+target is projected at the original camera resolution, per-image percentile
+normalized, dilated and Gaussian-smoothed, then resized/cropped with the input
+as in the retained loader. The crop mask is **training support, not measured
+LiDAR coverage**: zero-valued pixels within the crop also supervise the head.
+See [exact data semantics](TRAINING_DATA.md#historical-densified-targets).
 
-Targets use `clip(exported_intensity / intensity_scale, 0, 1)`:
+The original trainer instead used a sample-random 90/10 split. To explicitly
+replicate that policy, use
+[sources.legacy.example.yaml](../training/sources.legacy.example.yaml):
 
-- nuScenes converter output is already divided by 255; use `intensity_scale: 1.0`.
-- Waymo converter output is native intensity; scale 1.0 clips values above 1.
-  Select and document a fixed sensor-appropriate scale using **training data only**.
-  The manifest reports clipped-pixel counts so this choice is inspectable.
-- Zero-intensity returns remain valid. Uncovered pixels do not supervise intensity.
-- No per-image quantile mapping, GT min/max fit or test-set calibration occurs.
+```bash
+python -m training.prepare --config training/sources.legacy.example.yaml \
+  --output ./data/irnet_pairs_legacy --device cuda
+```
 
-Preparation fails on missing supervision, scene leakage, duplicates, incomplete
-exports or existing output directories. It records sample checksums and STN
-identity in `manifest.json`. Locally prepared samples remain subject to their
-upstream data terms; do not treat them as unrestricted redistribution artifacts.
+`sample-random-legacy` requires pooled sources, fixes a new `split_seed`, and
+records each sample's membership. It does **not** recover the unknown original
+indices or measure scene-held-out generalization. Never use it as evidence of
+generalization to unseen scenes. The scene-disjoint default is an intentional
+evaluation-policy difference, not an undocumented claim of identical splitting.
 
 ## Train And Resume
 
@@ -141,20 +135,15 @@ python -m training.train --data ./data/irnet_pairs/manifest.json \
   --output ./runs/irnet --device cuda
 ```
 
-The [default configuration](../training/config.yaml) uses Adam, constant learning
-rate 1e-4, weight decay 1e-5, batch size 4, and 100 epochs from scratch. These are
-starting settings, not a convergence guarantee. The model is the same full
-U-Net + DeepLab architecture used by the released inference configuration.
-The STN is **not trained** by this command. No pretrained torchvision weights,
-perceptual-network downloads or additional training dependencies are required.
+[config.yaml](../training/config.yaml) contains the recovered settings above.
+At least eight training views are needed for its complete batch. For a bounded
+CPU smoke, set preparation `image_shape: [64, 192]`, set training `batch_size: 2`,
+and run with `--device cpu --epochs 3`. Three epochs exercise the transition to
+active intensity supervision; one epoch does not. Batch size must be at least
+two for the DeepLab global-pooling BatchNorm branch. The dense recipe drops
+incomplete final training batches; validation retains all samples.
 
-For a bounded CPU smoke, set `image_shape: [64, 192]` before preparation and use
-`--device cpu --epochs 1`. This tests mechanics at reduced resolution, not quality.
-Batch size must be at least 2 for the ASPP global-pooling BatchNorm branch. A final
-singleton joins the preceding batch, so every training sample is retained and
-the largest batch may be one larger than the configured size.
-
-Optional initialization from the released IRNet (new optimizer, new run):
+Optional initialization from published IRNet, with a new optimizer:
 
 ```bash
 python -m training.train --data ./data/irnet_pairs/manifest.json \
@@ -162,80 +151,65 @@ python -m training.train --data ./data/irnet_pairs/manifest.json \
   --init-checkpoint ./weights/irnet/epoch_010.pth
 ```
 
-Resume at an **epoch boundary**, restoring model, Adam and PyTorch RNG state:
+Resume at an epoch boundary:
 
 ```bash
 python -m training.train --data ./data/irnet_pairs/manifest.json \
-  --output ./runs/irnet --device cuda --resume ./runs/irnet/last.pth --epochs 100
+  --output ./runs/irnet --device cuda --resume ./runs/irnet/last.pth --epochs 10
 ```
 
-`--epochs` is the total target count, not extra epochs. Data/config changes are
-rejected on resume. A failed partial epoch is rerun from the last complete
-checkpoint; if history and checkpoint differ, use a new output directory.
-When resuming into a new directory, best-checkpoint selection restarts over
-that continuation's completed epochs; the previous run's best is not copied.
-Seeded ordering and deterministic cuDNN settings improve reproducibility, but
-bitwise CUDA or cross-platform equivalence is not asserted.
+Resume restores model, optimizer, scheduler and Python/NumPy/PyTorch RNG states.
+`--epochs` is the total stop count, not additional epochs. The cosine horizon
+remains frozen to the configuration's `training.epochs`; resuming cannot extend
+it. Config/data changes are rejected. A failed partial epoch is rerun from the
+last completed checkpoint. Resume into a new directory if history/checkpoint
+disagree; best selection then restarts within that continuation. Seeded batch
+ordering is reproducible for a new run, not the unknown historical order.
+Bitwise equivalence across platforms or CUDA environments is not asserted.
 
 ## Objective And Outputs
 
-For input pseudo-NIR `X`, IRNet returns `R, S, I_hat, R*S`:
-
-| Term | Definition | Weight |
-| --- | --- | --- |
-| Reconstruction | Mean absolute error of `R*S` against `X`, not LiDAR GT | 1.0 |
-| Reflectance smoothness | Input-edge-weighted spatial gradients of `R` | 0.1 |
-| Shading smoothness | L1 difference between `S` and its 5 x 5 local average | 0.05 |
-| Reflectance mean | Absolute difference between batch mean of `R` and 0.5 | 0.1 |
-| Sparse intensity | L1 of `I_hat` against GT at explicitly valid pixels | 1.0 |
-
-The historical mean proxy is named **mean**, not median. Reconstruction and
-intensity weights must be positive. There is no warmup, perceptual, region or
-distribution loss in this baseline recipe. Intensity supervision backpropagates
-through the DeepLab head into the U-Net. No direct reflectance ground truth is assumed.
+For pseudo-NIR input `X`, the model returns `R, S, I_hat, R*S`. Reconstruction
+targets `X`, not intensity GT. Intensity supervision acts on `I_hat` and updates
+both DeepLab and U-Net through `R`; there is no measured reflectance target.
+The regularizer is a **mean** proxy, not a median. Frozen STN is not trained here.
+The active recipe does not require torchvision or perceptual-weight downloads.
 
 Each epoch saves:
 
-- `history.csv`: train/validation component losses, valid-pixel intensity MAE/RMSE,
-  sample counts and elapsed seconds. Component losses are batch/sample-averaged;
-  MAE/RMSE are aggregated over valid pixels. They need not be numerically identical.
-- `last.pth`: resumable checkpoint; `best.pth`: minimum full validation objective.
-- `best_inference.pth`: corresponding model-only checkpoint, no Adam state.
+- `history.csv`: component/total losses, effective intensity weight, learning
+  rates, masked MAE/RMSE, sample counts and time. Dense losses are averaged over
+  batches as in the retained trainer; MAE/RMSE are aggregated over training-support
+  pixels. Multi-scale L1 and full-resolution MAE need not match.
+- `last.pth`: resumable final epoch; `best.pth`: minimum full validation total.
+- `last_inference.pth` and `best_inference.pth`: corresponding model-only weights.
 - `model_config.yaml` and `run_from_epoch_*.json`: model, loss, seed and data identity.
-- `previews/epoch_*.png`: first validation sample, RGB/pseudo-NIR/R/S/reconstruction/
-  sparse GT/intensity-head/error. Blue-gray indicates missing GT, not zero intensity.
-  S uses its own display maximum; other grayscale panels use [0, 1].
+- `previews/epoch_*.png`: RGB, pseudo-NIR, R, S, R*S, derived target, I_hat and error.
+  S has a separate display maximum; other grayscale panels use [0, 1].
 
-These validation diagnostics evaluate the **intensity head**, not the final
-point-cloud deployment route. Deployment remains **R + remap**; best intrinsic
-validation loss is not proof of best deployment accuracy. Retraining can change
-the R distribution: calibrate using training data only and validate the remap
-separately before replacing released weights. Full convergence, GPU performance
-and end-to-end quality after retraining require separate experiments.
+These diagnostics assess the **head and intrinsic objectives**, not the final
+point-cloud route. Deployment remains **R + remap**. After retraining, separately
+validate R, projected intensity and remap using held-out data; never fit remap to
+the current evaluation frame's GT. Passing a training smoke does not establish
+convergence or preservation of released quality.
 
-For model-only inference, pass `best_inference.pth` and the saved model kwargs to
-`DeepIntrinsicWrapper`, or configure `stage2_deep.checkpoint_path` and
-`stage2_deep.model_config_path` in the YAML pipeline. The one-command demo still uses
-the released weight filenames/configuration and must not be mistaken for automatic
-checkpoint or calibration selection.
+Use a model-only output with `DeepIntrinsicWrapper` and the saved model kwargs,
+or set `stage2_deep.checkpoint_path` and `stage2_deep.model_config_path` in the
+pipeline YAML. The one-command demo still defaults to published weights; it
+does not automatically select a new checkpoint or calibration.
 
-## Verification
+## Optional Sparse Baseline
 
-The implementation entry points are:
-
-| Component | Source |
-| --- | --- |
-| Official-data conversion | [Waymo](../tools/data_export/prepare_waymo.py), [nuScenes](../tools/data_export/prepare_nuscenes.py) |
-| Pseudo-NIR and target preparation | [training/prepare.py](../training/prepare.py) |
-| Paired samples and split validation | [training/data.py](../training/data.py) |
-| Intrinsic and intensity objectives | [training/losses.py](../training/losses.py) |
-| Training, resume and previews | [training/train.py](../training/train.py) |
-| Full U-Net + DeepLab architecture | [Model](../inference/src/models/deep_intrinsic_net.py), [DeepLab blocks](../inference/src/models/network_variants.py) |
+Set `recipe: sparse-v1` in a separate sources YAML, prepare into a new directory,
+then explicitly select [config_sparse.yaml](../training/config_sparse.yaml):
 
 ```bash
-python -m unittest discover -s tests -p 'test_training.py' -v
+python -m training.train --config training/config_sparse.yaml \
+  --data ./data/irnet_pairs_sparse/manifest.json --output ./runs/irnet_sparse --device cuda
 ```
 
-Tests cover projection, valid zeros, masks, split leakage, checksums, gradient
-flow, full model train/resume and strict inference reload. See the
-[acceptance record](RELEASE_ACCEPTANCE.md) for measured integration scope.
+This preserves the earlier nearest-camera-depth sparse projection, explicit
+measurement mask, fixed intensity scale, masked L1 and constant-rate Adam
+baseline. It has no historical warmup/multi-scale objective. Data and training
+recipe names must agree; sparse labels cannot silently enter dense training.
+Old manifests/configurations without a recipe field retain sparse semantics.

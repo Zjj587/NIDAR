@@ -1,8 +1,42 @@
-# CPU Release Acceptance
+# Release Acceptance
+
+## Dense Training Restoration, 2026-10-18
+
+The default [IRNet recipe](TRAINING.md) now restores the retained dense-target
+method. The sparse recipe below remains a separately named baseline.
+
+| Check | Measured result |
+| --- | --- |
+| Retained source identity | Eight live source/configuration files match the audit snapshot |
+| Full architecture | 306 state entries; 18,890,115 parameters; R/S/I_hat/R*S forward outputs match exactly under the same state |
+| Generator and loader fixtures | Three projection geometries and three crop/mask cases match the retained implementation exactly |
+| Loss and gradients | Six cases across zero-based epochs 0/1/2 and full/partial masks agree within 1e-6 on PyTorch 1.4 and 2.8 |
+| Original data loading | Six Waymo pairs, three scenes, 384 x 960: input, target and mask match exactly |
+| Raw label replay | Six original clouds: restored/retained generators match exactly; stored PNGs match exactly in four cases, with 136 and 10 differing pixels in the remaining two |
+| Original training history | Ten epochs corroborate effective intensity weights [0, 0, 1, ...], component weights and cosine decay |
+| RTX 3090 check | One FP32 AdamW update, batch 8, 384 x 960; finite loss and gradients in both branches |
+| GPU memory | 10.00 GiB peak allocated, 15.78 GiB reserved; PyTorch 2.4.1 + CUDA 12.1, random initialization, no checkpoint deserialization in this check |
+| Real nuScenes CPU training | Four train views from scene-0061, two validation views from scene-0103; 64 x 192, batch 2, three epochs with save/resume across warmup |
+| Full-model CPU initialization/reload | Published full IRNet initialization and strict model-only inference reload passed on PyTorch 2.8 |
+| Deterministic resume | Separate generated-fixture test: three uninterrupted vs resumed epochs give bitwise-equal states |
+| Visual checks | Real-data input/target/R/S/R*S/I_hat/error previews saved and inspected |
+
+The GPU step cycles six inspected pairs to eight; it is a fit/backpropagation
+check, not an independent eight-sample benchmark. Its memory observation is
+not a promised minimum for other platforms. The published environment still
+requires PyTorch >= 2.6 for restricted checkpoint loading. The CPU smoke uses
+the released full architecture, not a tiny surrogate, but reduced image size.
+
+The target differences above are 136/2,457,600 and 10/2,457,600 pixels, with
+mean absolute differences of 0.000330 and 0.00000407 on the uint8 scale.
+Their cause is not established. This check does not establish exact historical
+split membership, original pseudo-NIR image generation, convergence, improved
+R+remap accuracy or a full replay of the paper. No new weights or sensor samples
+are published. Existing inference checkpoints and demo configuration are unchanged.
 
 ## IRNet Training Recipe Check, 2026-10-17
 
-The [training recipe](TRAINING.md) shares the released full U-Net + DeepLab
+The earlier sparse-target baseline shares the released full U-Net + DeepLab
 implementation. This bounded check used the ThinkPad CPU environment below,
 not a GPU or a full training dataset:
 
@@ -21,8 +55,9 @@ not a GPU or a full training dataset:
 The real-data run checks training mechanics and architecture compatibility.
 It is **not evidence of convergence, improved intensity quality, reproduction
 of the paper's training, or validation of a new R+remap calibration**. No new
-weights or training samples from this check are published. Full-resolution GPU
-training remains untested. The previous inference checks follow below.
+weights or training samples from this check are published. This October 17
+check did not test full-resolution GPU training; the later bounded check is
+recorded above. The previous inference checks follow below.
 
 Checks recorded from 2026-10-15 through 2026-10-17 using the published
 checkpoints and matching source. The initial owner-export check is followed

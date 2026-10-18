@@ -54,7 +54,8 @@ class ReleaseDocumentationTests(unittest.TestCase):
         for name in ("training/__init__.py", "training/data.py", "training/losses.py",
                      "training/prepare.py", "training/train.py", "training/config.yaml",
                      "training/sources.example.yaml", "tests/test_training.py", "docs/TRAINING.md",
-                     "docs/TRAINING_DATA.md"):
+                     "docs/TRAINING_DATA.md", "training/historical.py", "training/config_sparse.yaml",
+                     "training/sources.legacy.example.yaml", "tests/test_historical_training.py"):
             self.assertTrue((ROOT / name).is_file())
             self.assertTrue(package.should_copy(Path(name), False))
             self.assertIsNone(re.search(r"/(?:media|home\d?)/", (ROOT / name).read_text()))
@@ -90,7 +91,11 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertIn("valid_mask", data)
         self.assertIn("R*S", data)
         self.assertIn("I_hat", data)
-        self.assertIn("does not implement this historical densification path", data)
+        self.assertIn("historical-dense-v1", data)
+        self.assertIn("sample-random-legacy", guide)
+        self.assertIn("all-true", data)
+        self.assertIn("last_inference.pth", guide)
+        self.assertNotIn("does not implement this historical densification path", data)
 
 
 if __name__ == "__main__":
