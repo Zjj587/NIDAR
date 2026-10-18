@@ -53,7 +53,8 @@ class ReleaseDocumentationTests(unittest.TestCase):
     def test_training_release_is_explicit_and_portable(self):
         for name in ("training/__init__.py", "training/data.py", "training/losses.py",
                      "training/prepare.py", "training/train.py", "training/config.yaml",
-                     "training/sources.example.yaml", "tests/test_training.py", "docs/TRAINING.md"):
+                     "training/sources.example.yaml", "tests/test_training.py", "docs/TRAINING.md",
+                     "docs/TRAINING_DATA.md"):
             self.assertTrue((ROOT / name).is_file())
             self.assertTrue(package.should_copy(Path(name), False))
             self.assertIsNone(re.search(r"/(?:media|home\d?)/", (ROOT / name).read_text()))
@@ -77,6 +78,19 @@ class ReleaseDocumentationTests(unittest.TestCase):
                         anchors = {re.sub(r"[^\w\- ]", "", h.lower()).replace(" ", "-")
                                    for h in headings}
                         self.assertIn(unquote(url.fragment), anchors)
+
+    def test_training_data_and_historical_scope_are_explicit(self):
+        readme = (ROOT / "README.md").read_text()
+        guide = (ROOT / "docs/TRAINING.md").read_text()
+        data = (ROOT / "docs/TRAINING_DATA.md").read_text()
+        self.assertIn("docs/TRAINING_DATA.md", readme)
+        self.assertIn("Recovered Configuration Reference", guide)
+        self.assertIn("lambda_intensity: 1.0", guide)
+        self.assertIn("lambda_lidar: 0.5", guide)
+        self.assertIn("valid_mask", data)
+        self.assertIn("R*S", data)
+        self.assertIn("I_hat", data)
+        self.assertIn("does not implement this historical densification path", data)
 
 
 if __name__ == "__main__":

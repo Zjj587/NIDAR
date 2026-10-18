@@ -75,6 +75,19 @@ retain its copyright and license notices. Review training-data and weight
 distribution terms separately before public artifact release. Local retraining
 does not automatically remove third-party attribution or data obligations.
 
+## IRNet Training
+
+The historical IRNet workflow uses STN pseudo-NIR images paired with densified
+LiDAR intensity projections. `R*S` reconstructs the pseudo-NIR input; the
+DeepLab head `I_hat` receives intensity supervision through `R`. Deployment
+uses `R + remap`, not the supervised head as its final point-cloud signal.
+
+The repository now includes a runnable **sparse-target training baseline**,
+with [data preparation](TRAINING_DATA.md), scene-disjoint manifests, training,
+resume and qualitative comparisons. It is not the complete historical
+dense-training reproduction package. See the [training reference](TRAINING.md#historical-training-and-current-recipe)
+for saved historical settings, known differences and verification boundaries.
+
 ## Verified Inference
 
 Anonymous weight downloads, strict checkpoint loading and complete CPU

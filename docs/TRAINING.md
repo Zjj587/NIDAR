@@ -7,6 +7,11 @@ the released IRNet checkpoint does not contain its complete training configurati
 The default optimizer, loss weights and preprocessing below are explicit baseline
 choices, not a claim to recover the original paper's training run.
 
+Start with [training data and supervision](TRAINING_DATA.md) for what each
+sample contains and which output each target supervises. For the pretrained
+point-cloud demo, use the [quick start](../README.md#quick-start); no retraining
+is required.
+
 ## Historical Training And Current Recipe
 
 The historical workflow used pseudo-NIR inputs paired with **densified projected
@@ -28,15 +33,48 @@ method; it is not just a cleanup of file paths.
 | Intensity target | Projected LiDAR, normalized and densified | Direct sparse projection with an explicit validity mask |
 | Training schedule | Paper: 17 Waymo scenarios, 10 epochs, batch size 8 | Configurable scene manifests; default 100 epochs, batch size 4 |
 | Intensity objective | Paper: L1 + L2 + SSIM, multi-scale supervision and warmup | Masked L1 without multi-scale terms or warmup |
+| Optimizer evidence | Paper reports Adam; retained v3 trainer uses AdamW with cosine scheduling | Adam with constant learning rate |
 | Hardware evidence | Paper: one RTX 3090; owner confirms 24 GB VRAM | Small CPU smoke only; no full-resolution CUDA acceptance |
 
-The archived improved configuration also specifies an IRNet size of 384 x 960;
-the current preparation example uses 384 x 1248. The checkpoint itself does not
-embed the training configuration, and archived files may include later changes.
-These records therefore do not establish every setting used for the released
-weights. The original densified-data path and complete matching loss/configuration
+The hosted `epoch_010.pth` does not embed a training configuration. A separate
+companion checkpoint retained in the historical training output does contain
+saved arguments and the input configuration. Its settings are summarized below;
+it is an earlier checkpoint with different model tensors, not a replacement
+for the hosted weights. Archived source can also contain later edits. Neither
+record alone establishes the complete final run or its original split membership.
+
+### Recovered Configuration Reference
+
+| Setting | Saved companion-checkpoint configuration |
+| --- | --- |
+| Architecture | U-Net intrinsic network + DeepLab head, base channels 32, output stride 16; head receives R only |
+| IRNet image size | 384 x 960; the current public preparation default is 384 x 1248 |
+| Schedule | 10 configured epochs, batch size 8, learning rate 1e-4, weight decay 1e-5 |
+| Validation fraction | 0.1; the saved arguments do not contain the actual split indices |
+| Intrinsic terms | Reconstruction 1.0, R smoothness 0.01, mean proxy 0.01 with target 0.5; S smoothness/TV disabled |
+| Intensity components | L1 1.0, L2 0.5, SSIM 0.2; multi-scale option enabled at 1.0, 0.5 and 0.25 |
+| Warmup settings | One warmup epoch and one ramp-up epoch; interpret using the trainer's zero-based schedule |
+| Optional objectives | VGG and region loss weights zero; color matching and distribution loss options off |
+
+Two configuration names must not be conflated: the saved YAML has
+`lambda_lidar: 0.5`, while the saved parsed arguments also have
+`lambda_intensity: 1.0`. The retained improved-loss branch uses the latter
+with warmup; `lambda_lidar` belongs to the alternative loss branch. Copying
+the YAML value alone would not reproduce that branch's effective weight.
+The companion best checkpoint was saved at zero-based epoch 1; its validation
+total cannot be compared directly with later epochs under a different intensity
+weight. The hosted checkpoint is zero-based epoch 9 and remains unchanged.
+
+The original densified-data path and complete matching loss/configuration
 still need a separate reproduction check. The original GPU is not a measured
 minimum-memory requirement or a guarantee that the current defaults fit 24 GB.
+
+The retained v3 trainer uses a random sample-level validation split,
+whereas the public preparer requires scene-disjoint splits. Original split
+indices and the exact source/configuration at training time are not established
+by the released checkpoint. The optimizer discrepancy above is left explicit;
+the paper, a later source snapshot and a runnable new baseline are different
+forms of evidence, not interchangeable reproduction records.
 
 ## Prepare Data
 
@@ -182,6 +220,17 @@ the released weight filenames/configuration and must not be mistaken for automat
 checkpoint or calibration selection.
 
 ## Verification
+
+The implementation entry points are:
+
+| Component | Source |
+| --- | --- |
+| Official-data conversion | [Waymo](../tools/data_export/prepare_waymo.py), [nuScenes](../tools/data_export/prepare_nuscenes.py) |
+| Pseudo-NIR and target preparation | [training/prepare.py](../training/prepare.py) |
+| Paired samples and split validation | [training/data.py](../training/data.py) |
+| Intrinsic and intensity objectives | [training/losses.py](../training/losses.py) |
+| Training, resume and previews | [training/train.py](../training/train.py) |
+| Full U-Net + DeepLab architecture | [Model](../inference/src/models/deep_intrinsic_net.py), [DeepLab blocks](../inference/src/models/network_variants.py) |
 
 ```bash
 python -m unittest discover -s tests -p 'test_training.py' -v

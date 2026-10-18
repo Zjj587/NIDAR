@@ -72,6 +72,7 @@ PUBLIC_WAYMO_INCLUDE = (
     "docs/RELEASE_ACCEPTANCE.md",
     "docs/TROUBLESHOOTING.md",
     "docs/TRAINING.md",
+    "docs/TRAINING_DATA.md",
     "docs/assets/README.md",
     "docs/assets/nuscenes-gt.png",
     "docs/assets/nuscenes-nidar.png",

@@ -121,10 +121,16 @@ Small-head IRNet checkpoints are incompatible with this default.
 
 ## Train IRNet
 
-The [training guide](docs/TRAINING.md) covers official-data preparation,
-scene-disjoint splits, **U-Net + DeepLab** training, checkpoint resume and
-per-epoch qualitative comparisons. The frozen STN provides pseudo-NIR inputs;
-IRNet learns with `R*S` reconstruction and masked LiDAR intensity supervision.
+Train the full **U-Net + DeepLab** IRNet using the frozen STN's pseudo-NIR
+images. `R*S` reconstructs pseudo-NIR; the auxiliary `I_hat` head learns from
+LiDAR intensity. No reflectance ground truth is required.
+
+| Step | Guide |
+| --- | --- |
+| Download and convert sensor data | [Waymo / nuScenes](docs/DATA_ACCESS.md) |
+| Understand inputs, labels and splits | [Training data](docs/TRAINING_DATA.md) |
+| Prepare pairs, train and resume | [Training commands](docs/TRAINING.md#prepare-data) |
+| Compare the paper and public recipe | [Historical training](docs/TRAINING.md#historical-training-and-current-recipe) |
 
 ```bash
 python -m training.prepare --config training/sources.example.yaml \
@@ -133,11 +139,12 @@ python -m training.train --data ./data/irnet_pairs/manifest.json \
   --output ./runs/irnet --device cuda
 ```
 
-Set the scene paths in the example YAML first. This is a cleaned baseline recipe,
-not an exact replay of the released checkpoint's original training run. It uses
-sparse targets, not the historical densified LiDAR maps; see the
-[training differences](docs/TRAINING.md#historical-training-and-current-recipe).
-Raw datasets and STN training are not included. Deployment remains `R + remap`.
+Set the scene paths in the example YAML first. Training saves resumable and
+inference checkpoints, loss histories, and per-epoch input/GT/output comparisons.
+This runnable recipe uses **sparse targets**, not the paper's historical
+densified LiDAR maps, and is not an exact replay of the hosted checkpoint's
+training. Raw datasets and STN training are not included. Deployment remains
+`R + remap`; training is not required to run the pretrained demo.
 
 ## Supported Workflows
 
