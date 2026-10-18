@@ -115,7 +115,7 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertIn("git clone --branch v0.1.0", release)
         for label in ("Waymo:", "nuScenes:", "Public STN", "IRNet training:"):
             self.assertIn("- [x] " + label, readme)
-        for label in ("BC training/evaluation code", "IRNet improvements:", "Packaged UE5"):
+        for label in ("Behavior Cloning (BC) training/evaluation code", "IRNet improvements:", "Packaged UE5"):
             self.assertIn("- [ ] " + label, readme)
         self.assertNotIn("Frozen baseline:", readme)
         self.assertNotIn("Unchecked items are planned work", readme)

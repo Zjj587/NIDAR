@@ -41,7 +41,7 @@ This figure is not a validation run of the new official-data converter.*
 - [x] nuScenes: official mini download guide, conversion and two-frame CPU demo.
 - [x] Public STN and full U-Net + DeepLab IRNet weights, with verified checksums.
 - [x] IRNet training: dense-label preparation, training/resume and visual diagnostics.
-- [ ] BC training/evaluation code and a reproducible application guide.
+- [ ] Behavior Cloning (BC) training/evaluation code and a reproducible application guide.
 - [ ] IRNet improvements: supervision masks, label precision/normalization and quality ablations.
 - [ ] Packaged UE5 and Isaac Sim demos.
 
