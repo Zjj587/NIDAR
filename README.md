@@ -109,10 +109,7 @@ See [troubleshooting](docs/TROUBLESHOOTING.md) for setup and output questions.
 
 ## Method And Models
 
-```text
-RGB -> STN pseudo-NIR -> IRNet R -> LiDAR-camera projection
-    -> quantile remapping -> intensity point cloud
-```
+[![NIDAR pipeline: cross-spectral prior, intrinsic decomposition, and distribution calibration](docs/assets/nidar-pipeline.png)](docs/assets/nidar-pipeline.png)
 
 The default route uses **R + quantile remapping**. IRNet contains a U-Net
 intrinsic network and a DeepLab intensity head; the direct intensity output

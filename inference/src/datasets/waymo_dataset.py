@@ -1,7 +1,4 @@
-"""
-Waymo 数据集封装
-从 NCLR 项目提取并简化
-"""
+"""Load exported Waymo images, point clouds and calibration for projection."""
 import json
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional

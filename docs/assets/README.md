@@ -1,4 +1,21 @@
-# Overview Media
+# README Figures
+
+## Pipeline
+
+`nidar-pipeline.png` is an unmodified copy of the existing NIDAR method diagram
+at `static/images/pipeline9.png` in the
+[project website](https://nidar-web.github.io/#method).
+
+Source repository: https://github.com/nidar-web/nidar-web.github.io
+
+Source revision: `43ad7ce04faa6c6d1ae8c0779e7e1f3f847626ed`.
+
+SHA-256: `76523234126de92a142c5729ef549710f49281042e31bc9701baad70944c476e`.
+
+This is the existing framework illustration, not a newly generated result.
+Figure and embedded research-media rights are separate from the code license.
+
+## Overview Media
 
 Existing, unmodified NIDAR research visualizations from the
 [project website](https://nidar-web.github.io/#nuscenes-comparisons):

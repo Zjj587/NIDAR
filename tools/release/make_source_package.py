@@ -75,6 +75,7 @@ PUBLIC_WAYMO_INCLUDE = (
     "docs/TRAINING.md",
     "docs/TRAINING_DATA.md",
     "docs/assets/README.md",
+    "docs/assets/nidar-pipeline.png",
     "docs/assets/nuscenes-gt.png",
     "docs/assets/nuscenes-nidar.png",
     "tests/test_public_release.py",

@@ -42,6 +42,16 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertNotIn("docs/OPEN_SOURCE_RELEASE_CHECKLIST.md", readme)
         self.assertIn("docs/RELEASE_ACCEPTANCE.md", readme)
 
+    def test_readme_method_figure_is_bundled(self):
+        readme = (ROOT / "README.md").read_text()
+        method = readme.split("## Method And Models\n", 1)[1].split("\n## ", 1)[0]
+        figure = Path("docs/assets/nidar-pipeline.png")
+        self.assertIn("![NIDAR pipeline:", method)
+        self.assertIn("](" + figure.as_posix() + ")", method)
+        self.assertNotIn("RGB -> STN pseudo-NIR", method)
+        self.assertTrue(package.should_copy(figure, False))
+        self.assertEqual((ROOT / figure).read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
+
     def test_third_party_stn_notice_is_shipped(self):
         for name in ("LICENSES/CS_STEREO_MIT.txt", "THIRD_PARTY_NOTICES.md"):
             self.assertTrue((ROOT / name).is_file())
