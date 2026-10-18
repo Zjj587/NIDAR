@@ -37,10 +37,6 @@ This figure is not a validation run of the new official-data converter.*
 
 ## Release Progress
 
-**Frozen baseline: [v0.1.0](docs/RELEASE.md).** Checked items are released and
-verified within the [documented scope](docs/RELEASE_ACCEPTANCE.md), not full-split
-benchmarks. Unchecked items are planned work, not available features or proven gains.
-
 - [x] Waymo: official-data download guide, conversion and two-frame CPU demo.
 - [x] nuScenes: official mini download guide, conversion and two-frame CPU demo.
 - [x] Public STN and full U-Net + DeepLab IRNet weights, with verified checksums.

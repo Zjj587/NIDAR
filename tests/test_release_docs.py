@@ -107,7 +107,9 @@ class ReleaseDocumentationTests(unittest.TestCase):
             self.assertIn("- [x] " + label, readme)
         for label in ("BC training/evaluation code", "IRNet improvements:", "Packaged UE5"):
             self.assertIn("- [ ] " + label, readme)
-        self.assertIn("not available features or proven gains", readme)
+        self.assertNotIn("Frozen baseline:", readme)
+        self.assertNotIn("Unchecked items are planned work", readme)
+        self.assertIn("research demonstrations, not packaged workflows", release)
         self.assertIn("No improvement in R", release)
         self.assertIn("1390055c2c564d3276f29cc513b3ef3cdc355e40", release)
 
