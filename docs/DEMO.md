@@ -20,8 +20,8 @@ python -m pip install -r requirements.txt -c constraints-cpu-tested.txt
 python -m pip install -r requirements-viewer.txt -c constraints-cpu-tested.txt
 ```
 
-The constraints record the release-check environment; they are not a CUDA
-environment specification. Add `--device cpu` to the demo command below.
+These constraints pin a CPU environment, not a CUDA environment. Add
+`--device cpu` to the demo command below.
 
 Download or prepare the artifacts listed in `docs/MODEL_ZOO.md`, then set:
 
@@ -42,10 +42,6 @@ This pins the published model revision, verifies file sizes and SHA-256, and
 creates the expected STN/IRNet/quantile subdirectories without a Hub login.
 It does not download data. Waymo and nuScenes inputs must be obtained from
 their official providers; see [download and conversion commands](DATA_ACCESS.md).
-Official raw conversion and full CPU inference passed on the two-frame Waymo
-fixture and two nuScenes mini `scene-0061` keyframes. See the
-[acceptance record](RELEASE_ACCEPTANCE.md) for saved-image inspection and limits;
-these checks do not cover full segments/splits or a new nuScenes GUI test.
 UE5 and Isaac Sim demos are deferred.
 
 Large downloads print progress periodically. A file is ready only after the

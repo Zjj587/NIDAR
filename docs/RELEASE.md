@@ -1,8 +1,7 @@
 # Frozen Baseline v0.1.0
 
 Released baseline date: 2026-10-18. Use the `v0.1.0` tag for a fixed source
-snapshot; `main` may receive later development. This release freezes the verified
-workflow, not a claim that the models or training labels need no improvement.
+snapshot; `main` contains the current documentation and later updates.
 
 ```bash
 git clone --branch v0.1.0 https://github.com/Zjj587/NIDAR.git
@@ -33,16 +32,11 @@ detached HEAD when checking out a tag; this is expected for a fixed snapshot.
   contains artifact metadata and notices. Downloading files does not grant
   blanket commercial or redistribution rights.
 
-## Verified Scope
+## Included Workflows
 
-Official Waymo two-frame input and two nuScenes mini keyframes passed conversion
-and full CPU inference. Restored training passed source parity, bounded real-data
-train/resume checks, and one full-size RTX 3090 update. See the
-[acceptance record](RELEASE_ACCEPTANCE.md) for environments and limitations.
-
-These checks are not a full-split benchmark, a complete retraining experiment,
-or an exact replay of the hosted checkpoint's historical training run. Obtain
-Waymo and nuScenes data [from their providers](DATA_ACCESS.md); no raw or prepared
+The release includes Waymo/nuScenes conversion, pretrained R + remap inference,
+point-cloud visualization and IRNet training. Obtain Waymo and nuScenes data
+[from their providers](DATA_ACCESS.md); no raw or prepared
 training datasets are distributed here. Website simulator and BC videos are
 research demonstrations, not packaged workflows in this release.
 

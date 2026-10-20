@@ -28,19 +28,28 @@ class ReleaseDocumentationTests(unittest.TestCase):
                 self.assertNotIn("Owner-Only Artifact Locations", text)
 
     def test_internal_planning_is_not_published_or_packaged(self):
-        for name in ("docs/ROADMAP.md", "docs/OPEN_SOURCE_RELEASE_CHECKLIST.md"):
+        for name in ("docs/ROADMAP.md", "docs/OPEN_SOURCE_RELEASE_CHECKLIST.md",
+                     "docs/RELEASE_ACCEPTANCE.md"):
             with self.subTest(name=name):
                 self.assertFalse((ROOT / name).exists())
                 self.assertFalse(package.should_copy(Path(name), False))
                 self.assertFalse(package.should_copy(Path(name), True))
         self.assertTrue(package.should_copy(Path("tests/test_release_docs.py"), False))
 
-    def test_readme_does_not_lead_with_internal_acceptance_narrative(self):
+    def test_public_docs_do_not_include_internal_acceptance_narrative(self):
         readme = (ROOT / "README.md").read_text()
         self.assertNotIn("Release preview:", readme)
         self.assertNotIn("docs/ROADMAP.md", readme)
         self.assertNotIn("docs/OPEN_SOURCE_RELEASE_CHECKLIST.md", readme)
-        self.assertIn("docs/RELEASE_ACCEPTANCE.md", readme)
+        for path in self.documents:
+            with self.subTest(path=path.relative_to(ROOT)):
+                text = path.read_text()
+                self.assertNotIn("RELEASE_ACCEPTANCE.md", text)
+                self.assertNotIn("ThinkPad", text)
+                self.assertNotIn("saved-image inspection", text)
+                self.assertNotIn("one full-size RTX 3090", text)
+                self.assertNotIn("Validation boundary:", text)
+                self.assertNotIn("## Verified Workflows", text)
 
     def test_readme_method_figure_is_bundled(self):
         readme = (ROOT / "README.md").read_text()
@@ -111,7 +120,7 @@ class ReleaseDocumentationTests(unittest.TestCase):
         readme = (ROOT / "README.md").read_text()
         release = (ROOT / "docs/RELEASE.md").read_text()
         self.assertTrue(package.should_copy(Path("docs/RELEASE.md"), False))
-        self.assertIn("git clone --branch v0.1.0", readme)
+        self.assertIn("git clone https://github.com/Zjj587/NIDAR.git", readme)
         self.assertIn("git clone --branch v0.1.0", release)
         for label in ("Waymo:", "nuScenes:", "Public STN", "IRNet training:"):
             self.assertIn("- [x] " + label, readme)

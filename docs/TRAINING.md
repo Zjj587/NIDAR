@@ -46,26 +46,7 @@ intensity quality. The public hosted weight is the final, zero-based epoch-9
 checkpoint. Both final and minimum-total model-only outputs are saved below;
 evaluate their deployment behavior separately.
 
-### Verification And Limits
-
-- Compared against retained source: exact model-state layout and four forward
-  outputs, three target-generator fixtures, three loader fixtures, and loss
-  components/gradients across warmup phases (tolerance 1e-6).
-- Six original Waymo image/target pairs across three scenes: restored loading
-  agrees pixel-for-pixel with the original loader at 384 x 960.
-- Six original raw-cloud target regenerations: portable and retained generators
-  agree exactly. Compared with stored historical PNGs, four agree exactly;
-  the other two differ at 136 and 10 of 2,457,600 pixels. The source of those
-  small historical differences is not established; byte-identical replay of
-  every historical label is not claimed.
-- One RTX 3090 FP32 training step at batch 8 and 384 x 960 passed with finite
-  gradients in both networks. Peak tensor allocation was 10.00 GiB; allocator
-  reservation was 15.78 GiB. This used random initialization and six real pairs
-  repeated to eight, not a convergence experiment or a memory minimum.
-- Real nuScenes mini: four training and two validation views, full released
-  architecture initialized from public IRNet, three epochs at 64 x 192, with
-  save/resume across warmup and strict inference reload. See
-  [acceptance scope](RELEASE_ACCEPTANCE.md#dense-training-restoration-2026-10-18).
+### Historical Scope
 
 The paper reports 17 Waymo scenarios, 10 epochs, batch 8 and one RTX 3090.
 It calls the optimizer Adam; the retained trainer uses **AdamW**. We preserve
@@ -82,8 +63,8 @@ Use the [inference environment](../README.md#quick-start), including PyTorch
 terms and use the [official converters](DATA_ACCESS.md). No raw or prepared
 Waymo/nuScenes training samples are redistributed.
 
-For a small engineering check, export two **different scenes** in the separate
-nuScenes export environment:
+For example, export training and validation inputs from two **different scenes**
+in the separate nuScenes export environment:
 
 ```bash
 .venv-nuscenes-export/bin/python tools/data_export/prepare_nuscenes.py \
@@ -138,8 +119,8 @@ python -m training.train --data ./data/irnet_pairs/manifest.json \
 ```
 
 [config.yaml](../training/config.yaml) contains the recovered settings above.
-At least eight training views are needed for its complete batch. For a bounded
-CPU smoke, set preparation `image_shape: [64, 192]`, set training `batch_size: 2`,
+At least eight training views are needed for its complete batch. For a lightweight
+CPU setup check, set preparation `image_shape: [64, 192]`, set training `batch_size: 2`,
 and run with `--device cpu --epochs 3`. Three epochs exercise the transition to
 active intensity supervision; one epoch does not. Batch size must be at least
 two for the DeepLab global-pooling BatchNorm branch. The dense recipe drops
@@ -192,8 +173,8 @@ Each epoch saves:
 These diagnostics assess the **head and intrinsic objectives**, not the final
 point-cloud route. Deployment remains **R + remap**. After retraining, separately
 validate R, projected intensity and remap using held-out data; never fit remap to
-the current evaluation frame's GT. Passing a training smoke does not establish
-convergence or preservation of released quality.
+the current evaluation frame's GT. Select checkpoints using held-out deployment
+quality as well as the training objectives.
 
 Use a model-only output with `DeepIntrinsicWrapper` and the saved model kwargs,
 or set `stage2_deep.checkpoint_path` and `stage2_deep.model_config_path` in the

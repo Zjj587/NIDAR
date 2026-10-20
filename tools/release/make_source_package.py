@@ -70,7 +70,6 @@ PUBLIC_WAYMO_INCLUDE = (
     "docs/DATA_ACCESS.md",
     "docs/MODEL_ZOO.md",
     "docs/RELEASE.md",
-    "docs/RELEASE_ACCEPTANCE.md",
     "docs/TROUBLESHOOTING.md",
     "docs/TRAINING.md",
     "docs/TRAINING_DATA.md",

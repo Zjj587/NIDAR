@@ -85,7 +85,6 @@ class PublicReleaseTests(unittest.TestCase):
                      "inference/src/models/checkpoint.py", "requirements-viewer.txt",
                      "requirements-eval.txt", "tests/test_checkpoint.py",
                      "constraints-cpu-tested.txt",
-                     "docs/RELEASE_ACCEPTANCE.md",
                      "tools/download_weights.py", "tests/test_download_weights.py",
                      "requirements-waymo-export.txt", "requirements-nuscenes-export.txt",
                      "tools/data_export/common.py", "tools/data_export/prepare_waymo.py",
@@ -93,7 +92,8 @@ class PublicReleaseTests(unittest.TestCase):
                      "inference/quantile_model/nintensity_mapping_quantile_model.pkl"]:
             self.assertTrue(package.should_copy(Path(name), False), name)
             self.assertTrue((ROOT / name).is_file(), name)
-        for name in [".git/config", "weights/stn/47.pth", "outputs/result.npy", "logs/COMMAND_LOG.md"]:
+        for name in [".git/config", "weights/stn/47.pth", "outputs/result.npy", "logs/COMMAND_LOG.md",
+                     "docs/RELEASE_ACCEPTANCE.md"]:
             self.assertFalse(package.should_copy(Path(name), False), name)
 
     def test_source_package_runs_demo_help(self):

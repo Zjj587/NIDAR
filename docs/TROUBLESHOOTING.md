@@ -66,7 +66,7 @@ An error mentioning `numpy.core.multiarray.scalar` with NumPy 2 can indicate
 an older NIDAR loader. The current loader explicitly maps this legacy scalar
 name while keeping restricted loading enabled. Update the source, rather
 than setting `weights_only=False`. For CPU installation, see the pinned
-[release-check environment](DEMO.md#inputs).
+[CPU environment setup](DEMO.md#inputs).
 
 ## Predictions Contain Empty Or Inconsistent Regions
 

@@ -111,7 +111,7 @@ Missing sparse coverage appears blue-gray in previews, not as zero-valued GT.
   More camera views are not more independent scenes.
 - Check target coverage and per-epoch RGB/pseudo-NIR/target/R/S/R*S/I_hat/error
   panels. Cropping and dense-label zeros can strongly affect what is optimized.
-- Two-scene mini smokes test mechanics, not generalization or convergence.
+- Use independent held-out scenes to assess generalization after training.
 
 Data remain subject to provider terms. Raw/prepared Waymo and nuScenes samples,
 complete historical splits and STN retraining are not distributed here.

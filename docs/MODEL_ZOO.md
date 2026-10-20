@@ -67,7 +67,7 @@ This inference release does not include a complete STN training-reproduction
 package. Checkpoint metadata alone does not establish a performance improvement
 over upstream weights. See the
 [model provenance](https://huggingface.co/zhangjunjie587/NIDAR/blob/main/PROVENANCE.md)
-for artifact sources and verification scope.
+for artifact sources and training scope.
 
 The upstream code carries an
 [MIT license](https://github.com/tiancheng-zhi/cs-stereo/blob/master/LICENSE);
@@ -83,20 +83,17 @@ DeepLab head `I_hat` receives intensity supervision through `R`. Deployment
 uses `R + remap`, not the supervised head as its final point-cloud signal.
 
 The default [training recipe](TRAINING.md) restores densified labels, the recovered
-intrinsic/intensity objective, warmup and optimizer schedule, with verified
-source parity and bounded real-data training checks. [Data preparation](TRAINING_DATA.md)
+intrinsic/intensity objective, warmup and optimizer schedule. [Data preparation](TRAINING_DATA.md)
 supports scene-disjoint splits and an explicit legacy sample-random policy.
 The earlier sparse-target baseline remains optional. Exact original split
 membership and a bitwise replay of the hosted checkpoint's training are not
 claimed. Published weights and their hashes remain unchanged.
 
-## Verified Inference
+## Inference
 
-Anonymous weight downloads, strict checkpoint loading and complete CPU
-inference have been checked. Official Waymo and nuScenes two-frame checks,
-the tested environment and their limits are documented in
-[release acceptance](RELEASE_ACCEPTANCE.md). These checks do not establish
-full-dataset quality, CUDA performance or training reproducibility.
+Follow the [demo guide](DEMO.md) to run pretrained inference on prepared Waymo
+or nuScenes input. The downloader requires no login and verifies checkpoint
+hashes before use. Choose `--device cpu` or a compatible CUDA environment.
 
 ## Expected Weight Layout
 

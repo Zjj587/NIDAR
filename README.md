@@ -32,13 +32,12 @@ visual comparisons.
   </tr>
 </table>
 
-*Existing nuScenes research example from the [project page](https://nidar-web.github.io/#nuscenes-comparisons).
-This figure is not a validation run of the new official-data converter.*
+*nuScenes intensity comparison from the [project page](https://nidar-web.github.io/#nuscenes-comparisons).*
 
 ## Release Progress
 
-- [x] Waymo: official-data download guide, conversion and two-frame CPU demo.
-- [x] nuScenes: official mini download guide, conversion and two-frame CPU demo.
+- [x] Waymo: official-data download guide, conversion and end-to-end demo.
+- [x] nuScenes: official mini download guide, conversion and end-to-end demo.
 - [x] Public STN and full U-Net + DeepLab IRNet weights, with verified checksums.
 - [x] IRNet training: dense-label preparation, training/resume and visual diagnostics.
 - [ ] Behavior Cloning (BC) training/evaluation code and a reproducible application guide.
@@ -47,11 +46,11 @@ This figure is not a validation run of the new official-data converter.*
 
 ## Quick Start
 
-Use Python 3.10 and PyTorch 2.6 or newer. PyTorch 2.8 is used for checkpoint
-release checks. Install a PyTorch build appropriate for your CPU/GPU.
+Use Python 3.10 and PyTorch 2.6 or newer. Install a PyTorch build appropriate
+for your CPU/GPU.
 
 ```bash
-git clone --branch v0.1.0 https://github.com/Zjj587/NIDAR.git
+git clone https://github.com/Zjj587/NIDAR.git
 cd NIDAR
 conda create -n nidar python=3.10 -y
 conda activate nidar
@@ -150,26 +149,21 @@ Set the scene paths in the example YAML first. Training saves resumable and
 inference checkpoints, loss histories, and per-epoch input/GT/output comparisons.
 The default restores **densified LiDAR targets**, the intrinsic/intensity losses
 and the recovered training schedule. An optional sparse baseline is also included.
-See the [verification and replay limits](docs/TRAINING.md#verification-and-limits).
+See the [training configuration and scope](docs/TRAINING.md#historical-training-and-current-recipe).
 Raw datasets and STN training are not included. Deployment remains `R + remap`;
 training is not required to run the pretrained demo.
 
 ## Supported Workflows
 
-| Workflow | Current scope |
+| Workflow | Available functionality |
 | --- | --- |
-| Waymo raw TFRecord -> inference | Official two-frame SDK fixture passed; full-segment acceptance remains separate |
-| nuScenes converter | Official mini `scene-0061`, two keyframes with six cameras; raw conversion and SDK projection checks passed |
-| Converted nuScenes inference | Full CPU `R + remap` route and saved-image inspection passed on those two frames; no full-split benchmark |
+| Waymo conversion | Frame TFRecord to camera images, TOP-LiDAR points and calibration |
+| nuScenes conversion | Six-camera and LIDAR_TOP export with calibrated poses |
+| End-to-end inference | STN -> IRNet R -> projection -> dataset-specific remap |
 | Static previews and MAE/RMSE/SSIM evaluation | Included |
 | Interactive point-cloud viewing | Optional Open3D dependency |
-| IRNet dense training and sample preparation | Source parity, real-data CPU train/resume and one full-size RTX 3090 step checked |
+| IRNet training | Dense-target preparation, training/resume and per-epoch visual comparisons |
 | STN training and downstream experiment harnesses | Not included |
-
-See [tested environments and acceptance results](docs/RELEASE_ACCEPTANCE.md).
-These bounded checks validate workflow mechanics, not full-split quality,
-convergence or sustained performance. A research result and a tested public
-integration are distinct.
 
 ## Limits
 

@@ -9,16 +9,6 @@ does not need your provider credentials. UE5 and Isaac Sim demos are deferred.
 | Waymo Perception Frame TFRecord | `prepare_waymo.py`, TOP LiDAR first return | STN -> IRNet R -> Waymo remap |
 | nuScenes `v1.0-mini` | `prepare_nuscenes.py`, six cameras and LIDAR_TOP | STN -> IRNet R -> nuScenes remap |
 
-**Validation boundary:** the official two-frame Waymo SDK TFRecord below has
-passed raw conversion and complete CPU inference. Its converter environment
-and 20 exporter tests, including native SDK/protobuf decoding, passed. This is
-a small upstream fixture, not a full-segment or generalization benchmark.
-Two keyframes from official nuScenes mini `scene-0061` also passed raw
-conversion, full CPU inference, SDK projection checks and saved-image
-inspection. This does not cover all mini scenes. See the
-[Waymo record](RELEASE_ACCEPTANCE.md#official-waymo-raw-fixture-2026-10-16) and
-[nuScenes record](RELEASE_ACCEPTANCE.md#official-nuscenes-mini-two-frame-check-2026-10-16).
-
 Set up the inference environment and public weights using the
 [quick start](../README.md#quick-start). Run each converter in its own
 environment; do not install the Waymo TensorFlow SDK into the PyTorch inference
@@ -28,7 +18,7 @@ environment. Commands below assume the repository root as working directory.
 
 ### Download
 
-For a small raw-format smoke test, the **official Waymo SDK repository**
+For a lightweight demo input, the **official Waymo SDK repository**
 provides a two-frame TFRecord. This is an upstream test fixture, not a complete
 segment or a representative benchmark. Download it directly from its provider:
 
@@ -88,8 +78,7 @@ package name, that release declares TensorFlow 2.13 and NumPy 1.23.5. Let its
 dependency metadata resolve the environment; do not force TensorFlow 2.12.
 The requirements include JAX's official archive because old `jaxlib` wheels
 are no longer on PyPI. They also pin protobuf 3.20.3: this legacy SDK's
-`ParseFromString(bytearray(...))` fails with protobuf 4's parser. These fixes
-were exercised on the raw fixture, not just an import check.
+`ParseFromString(bytearray(...))` fails with protobuf 4's parser.
 If `venv` reports missing `ensurepip`, use a separate
 Conda Python 3.10 environment or install your OS's Python 3.10 venv support.
 
@@ -99,8 +88,7 @@ camera's recorded pose. Per-frame evaluation files retain the source beam
 inclinations and range-image width; the legacy fixed mount is not reused.
 Camera rolling shutter and moving-object motion are
 not corrected. `input_manifest.json` records the context name, source frame
-indices, timestamps and data version. Internal historical labels such as
-`scene_ws4/frame_000000` are not official extraction identifiers.
+indices, timestamps and data version.
 
 ### Run The Demo
 
@@ -134,12 +122,8 @@ gzip -t data/v1.0-mini.tgz
 tar -xzf data/v1.0-mini.tgz -C data/nuscenes_official
 ```
 
-The archive retrieved for acceptance on 2026-10-16 is 4,167,696,325 bytes;
-its measured SHA-256 is
-`943037abbb3b26b3070dc76504a43eb440503b00baf9ac2f1538d9c03fc9298f`.
-This is our download receipt, not a provider-published checksum. The provider's
-multipart ETag and gzip integrity check also matched. Do not treat a partial
-download as a complete dataset.
+Run `gzip -t` before extracting the archive; do not treat a partial download
+as a complete dataset.
 
 2. Follow the [official devkit layout](https://github.com/nutonomy/nuscenes-devkit#nuscenes-setup).
    Preserve all JSON metadata and the sensor directories; do not flatten or
@@ -219,9 +203,3 @@ The source manifest is copied into `results/`. See the [demo guide](DEMO.md).
 Exporters require a fresh output directory and never delete official input.
 A failed conversion leaves an incomplete manifest that the demo rejects;
 retry into a new empty directory. Conversion SDKs are unnecessary after export.
-
-Acceptance records must identify the official source, converter environment,
-complete inference result and visual inspection. Records are available for the
-Waymo fixture and two real nuScenes mini frames. A full Waymo segment, broader
-nuScenes coverage and CUDA remain separate checks; existing research figures
-and synthetic tests alone do not satisfy them.
